@@ -3,14 +3,14 @@
 ## 当前已验证状态
 
 - 仓库根目录：`C:\craft_agents`
-- 当前目录状态：尚未初始化为 git 仓库。
+- 当前目录状态：已初始化为 git 仓库，当前分支 `main`，remote `origin` 指向 `https://github.com/fuweiwe1/TradingAgents.git`。
 - 标准启动路径：Unix/Git Bash 使用 `bash ./init.sh`；Windows 无 Bash 时使用 `powershell -ExecutionPolicy Bypass -File .\init.ps1`。
 - 标准验证路径：当前只做约束文件与环境检查；正式项目代码拉取后需要更新为真实构建/测试命令。
 - 当前最高优先级未完成功能：`spec-001`，完善 StockCraft 产品与技术 Spec。
 - 当前工作流基线：`setup-001` 已通过；约束文件已补齐并完成 JSON/存在性/Windows 启动入口校验。
 - 当前 blocker：
-  - `C:\craft_agents` 还不是 git 仓库，无法查看提交历史或提交变更。
-  - Craft Agents OSS fork/本地工作区尚未准备，暂不能执行项目级构建或测试。
+  - 当前仓库尚未放入 Craft Agents OSS 项目代码，未检测到 `package.json`，暂不能执行项目级构建或测试。
+  - 需要确认 remote 仓库名 `TradingAgents` 是否为本项目最终命名，还是临时名称。
 
 ## 会话记录
 
@@ -52,3 +52,23 @@
   - 初始化/克隆 Craft Agents OSS 工作区。
   - 确认 `bash ./init.sh` 能在目标开发环境中执行；Windows 当前可先使用 `init.ps1`。
   - 将 StockCraft Spec 保存到仓库文档目录并进入实现计划阶段。
+
+### Session 002
+
+- 日期：2026-06-15
+- 本轮目标：确认 GitHub 仓库创建后，正式开工前还缺什么。
+- 已完成：
+  - 重新读取 `AGENTS.md`、`claude-progress.md`、`feature_list.json`。
+  - 运行 Windows 标准启动入口 `init.ps1`。
+  - 确认当前目录已经是 git 仓库，当前分支为 `main`。
+  - 确认 `origin` 为 `https://github.com/fuweiwe1/TradingAgents.git`。
+  - 确认当前工作区干净。
+- 运行过的验证：
+  - `Get-Location`：确认当前目录为 `C:\craft_agents`。
+  - `powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1`：通过；提示尚无 `package.json`。
+  - `git log --oneline -5`：通过，最近提交为 `d0d0c69 初始化项目`。
+  - `git remote -v`：通过，origin 指向 GitHub 仓库。
+  - `git status --short`：通过，无输出，工作区干净。
+- 当前结论：
+  - git/GitHub 基础状态已就绪。
+  - 正式实现前仍需要把 StockCraft Spec 落盘，并准备 Craft Agents OSS 代码基线或明确采用空仓库逐步迁入。

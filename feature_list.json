@@ -67,9 +67,12 @@
         "基础 smoke test 可以运行并记录结果。"
       ],
       "evidence": [
-        "2026-06-15: C:\\craft_agents 当前不是 git 仓库。"
+        "2026-06-15: C:\\craft_agents 曾不是 git 仓库，无法执行 git log。",
+        "2026-06-15: 已确认 C:\\craft_agents 是 git 仓库，当前分支 main，最近提交 d0d0c69 初始化项目。",
+        "2026-06-15: 已确认 origin 指向 https://github.com/fuweiwe1/TradingAgents.git。",
+        "2026-06-15: 已确认当前未检测到 package.json 或 Craft Agents OSS 项目代码。"
       ],
-      "notes": "需要先克隆或初始化 Craft Agents OSS fork。"
+      "notes": "2026-06-15 已确认当前目录是 git 仓库，origin 指向 https://github.com/fuweiwe1/TradingAgents.git；仍未检测到 package.json 或 Craft Agents OSS 项目代码，项目级构建/测试暂不可运行。"
     },
     {
       "id": "stock-001",
