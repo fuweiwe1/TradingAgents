@@ -1,0 +1,139 @@
+{
+  "project": "StockCraft",
+  "last_updated": "2026-06-15",
+  "rules": {
+    "single_active_feature": true,
+    "passing_requires_evidence": true,
+    "do_not_skip_verification": true
+  },
+  "status_legend": {
+    "not_started": "功能尚未开始。",
+    "in_progress": "当前唯一正在推进的功能。",
+    "blocked": "因为已记录的阻塞问题，当前无法继续推进。",
+    "passing": "要求的验证已经通过，并且证据已经记录。"
+  },
+  "features": [
+    {
+      "id": "setup-001",
+      "priority": 0,
+      "area": "project-setup",
+      "title": "建立可恢复的工作流基线",
+      "user_visible_behavior": "后续 agent 可以通过 AGENTS.md、claude-progress.md、feature_list.json 和 init.sh 无猜测地恢复工作。",
+      "status": "passing",
+      "verification": [
+        "读取 AGENTS.md 并确认工作规则可执行。",
+        "确认 feature_list.json 是合法 JSON。",
+        "运行或尝试运行 ./init.sh，并记录结果。",
+        "确认 claude-progress.md 记录当前 blocker 和下一步。"
+      ],
+      "evidence": [
+        "2026-06-15: 已发现当前目录不是 git 仓库。",
+        "2026-06-15: 已发现当前环境 bash ./init.sh 失败，原因是 WSL 缺少 /bin/bash。",
+        "2026-06-15: python -m json.tool feature_list.json 通过。",
+        "2026-06-15: Python UTF-8 读取 feature_list.json 通过，项目为 StockCraft，功能数为 7。",
+        "2026-06-15: PowerShell Get-Content -Encoding UTF8 | ConvertFrom-Json 通过。",
+        "2026-06-15: AGENTS.md、claude-progress.md、clean-state-checklist.md、feature_list.json、init.sh、init.ps1、session-handoff.md 均存在。",
+        "2026-06-15: powershell -NoProfile -ExecutionPolicy Bypass -File .\\init.ps1 通过；当前阶段只做约束文件检查。"
+      ],
+      "notes": "约束文件基线已补齐；Windows fallback 启动入口可用。剩余问题属于 infra-001 的环境/仓库准备。"
+    },
+    {
+      "id": "spec-001",
+      "priority": 1,
+      "area": "spec",
+      "title": "完善 StockCraft 产品与技术 Spec",
+      "user_visible_behavior": "项目拥有一份明确的 v1 Spec，描述股票研究工作台、五步研究流、LLM 复用策略、本地 SQLite、Source 模板、Watchlist 和 Reports。",
+      "status": "not_started",
+      "verification": [
+        "Spec 明确 v1 范围和 out-of-scope。",
+        "Spec 明确复用 Craft Agents 现有 LLM connection 系统，只新增单连接默认模型策略。",
+        "Spec 明确 SQLite 存储边界和 renderer/main 访问边界。",
+        "Spec 明确五步研究流与单 Craft session 的关系。"
+      ],
+      "evidence": [],
+      "notes": "聊天中已有初稿，需要落盘到 docs 目录并做自检。"
+    },
+    {
+      "id": "infra-001",
+      "priority": 2,
+      "area": "infrastructure",
+      "title": "准备 Craft Agents OSS 本地工作区",
+      "user_visible_behavior": "开发者可以在本地运行标准初始化、构建和基础测试命令。",
+      "status": "blocked",
+      "verification": [
+        "当前目录是 git 仓库。",
+        "git log --oneline -5 可以运行。",
+        "./init.sh 可以在目标开发环境运行。",
+        "基础 smoke test 可以运行并记录结果。"
+      ],
+      "evidence": [
+        "2026-06-15: C:\\craft_agents 当前不是 git 仓库。"
+      ],
+      "notes": "需要先克隆或初始化 Craft Agents OSS fork。"
+    },
+    {
+      "id": "stock-001",
+      "priority": 3,
+      "area": "stock-research",
+      "title": "实现单股研究五步流",
+      "user_visible_behavior": "用户输入 A股、港股或美股标的后，可以看到数据收集、分析师观点、牛熊辩论、风险审查、报告生成五个步骤依次完成。",
+      "status": "not_started",
+      "verification": [
+        "输入 600519 可识别为 A股并创建研究 run。",
+        "输入 00700.HK 可识别为港股并创建研究 run。",
+        "输入 AAPL 可识别为美股并创建研究 run。",
+        "研究 run 关联一个 Craft session。"
+      ],
+      "evidence": [],
+      "notes": "依赖 spec-001 和 infra-001。"
+    },
+    {
+      "id": "stock-002",
+      "priority": 4,
+      "area": "storage",
+      "title": "实现股票模块本地 SQLite 存储",
+      "user_visible_behavior": "Watchlist、研究 run、步骤结果和报告可以本地持久化，应用重启后仍可查看。",
+      "status": "not_started",
+      "verification": [
+        "空用户目录启动时自动创建 schema。",
+        "Watchlist 项可新增、查询、删除。",
+        "研究报告可保存、列表查询、详情打开。",
+        "renderer 不直接访问 SQLite。"
+      ],
+      "evidence": [],
+      "notes": "计划使用 better-sqlite3。"
+    },
+    {
+      "id": "stock-003",
+      "priority": 5,
+      "area": "reports",
+      "title": "实现独立报告中心",
+      "user_visible_behavior": "用户可以查看历史股票研究报告、筛选、打开详情、跳回原会话并导出 Markdown。",
+      "status": "not_started",
+      "verification": [
+        "报告列表展示股票、市场、风险等级、创建时间。",
+        "报告详情展示完整章节和免责声明。",
+        "从报告可跳回关联 Craft session。",
+        "Markdown 导出内容完整。"
+      ],
+      "evidence": [],
+      "notes": "依赖 stock-002。"
+    },
+    {
+      "id": "stock-004",
+      "priority": 6,
+      "area": "watchlist",
+      "title": "实现轻量 Watchlist",
+      "user_visible_behavior": "用户可以添加、删除、分组自选股，并从自选股发起研究。",
+      "status": "not_started",
+      "verification": [
+        "添加 A股、港股、美股自选股。",
+        "按分组查看自选股。",
+        "删除自选股后列表更新。",
+        "从自选股点击发起研究。"
+      ],
+      "evidence": [],
+      "notes": "依赖 stock-002。"
+    }
+  ]
+}
