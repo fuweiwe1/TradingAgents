@@ -3,7 +3,7 @@
 ## 当前上下文
 
 - 项目目标：基于 Craft Agents OSS 套壳/扩展为股票研究桌面工作台，工作名 `StockCraft`。
-- 当前阶段：`stock-001` 单股研究五步流实现中，首个后端入口切片已完成。
+- 当前阶段：`stock-001` 单股研究五步流实现中，后端入口和首个 UI 发起入口已完成。
 - 用户已确认的关键架构决策：
   - 产品形态：Craft Agents 内核 + 股票研究工作台。
   - 用户定位：个人投资研究。
@@ -29,11 +29,13 @@
 - `bun run typecheck:shared` 已通过。
 - `packages/server-core` 的 `bun run typecheck` 已通过。
 - `stockResearch:createRun` 后端入口已实现：解析 A股/港股/美股代码，创建一个 Craft session，并发送五步研究初始提示词；该入口不传 `model` 或 `llmConnection`，复用 Craft Agents 现有默认 LLM connection。
-- 当前功能分支已有本地提交；推送到 `origin/stock-001-research-run` 因无法连接 `github.com:443` 失败，网络恢复后重试 `git push -u origin stock-001-research-run`。
+- 当前功能分支已追踪 `origin/stock-001-research-run`，远端 HEAD 为 `a07b94e`。
+- `window.electronAPI.createStockResearchRun` 已接入；左侧栏 `Stock Research` 按钮会打开股票代码输入弹窗，提交后创建研究 session 并导航过去。
+- `apps/electron` 的 `bun run typecheck` 已通过。
 
 ## 下一步建议
 
-1. 继续 `stock-001`：当前后端入口切片已完成，分支为 `stock-001-research-run`。
-2. 下一步接入 renderer UI：从股票输入触发 `stockResearch:createRun`，并跳转/展示关联 session。
-3. 继续设计研究 run 状态和步骤状态展示；报告持久化应等 `stock-002` SQLite 边界落地后再做。
+1. 继续 `stock-001`：当前可从 UI 发起股票研究，分支为 `stock-001-research-run`。
+2. 下一步做研究 run 状态和五步步骤状态展示。
+3. 报告持久化应等 `stock-002` SQLite 边界落地后再做。
 4. 注意：`bun run typecheck:all` 当前有上游基线问题，本切片验证以 focused tests、`typecheck:shared`、`server-core typecheck` 为准。

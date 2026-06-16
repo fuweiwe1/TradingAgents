@@ -108,9 +108,13 @@
         "2026-06-16: 已新增 stockResearch:createRun RPC，创建一个 Craft session 并发送五步研究初始提示，不传 model/llmConnection，复用默认 LLM connection。",
         "2026-06-16: bun test packages/shared/src/stock/__tests__/symbols.test.ts packages/shared/src/stock/__tests__/research-run.test.ts packages/server-core/src/handlers/rpc/stock-research.test.ts 通过。",
         "2026-06-16: bun test packages/shared/src/protocol/__tests__/routing.test.ts apps/electron/src/main/handlers/__tests__/registration.test.ts apps/electron/src/main/handlers/__tests__/registration-profiles.test.ts 通过。",
-        "2026-06-16: bun run typecheck:shared 通过；cd packages/server-core && bun run typecheck 通过。"
+        "2026-06-16: bun run typecheck:shared 通过；cd packages/server-core && bun run typecheck 通过。",
+        "2026-06-16: 已创建 docs/superpowers/plans/2026-06-16-stock-001-renderer-entry.md。",
+        "2026-06-16: 已新增 window.electronAPI.createStockResearchRun，并在左侧栏加入 Stock Research 输入入口。",
+        "2026-06-16: bun test apps/electron/src/renderer/stock-research/__tests__/start-stock-research.test.ts apps/electron/src/shared/__tests__/ipc-channels.test.ts 通过。",
+        "2026-06-16: cd apps/electron && bun run typecheck 通过。"
       ],
-      "notes": "后端入口切片已完成；仍需接 UI 工作台、步骤状态展示和报告持久化，因此 stock-001 继续保持 in_progress。"
+      "notes": "后端入口和首个 UI 发起入口已完成；仍需做步骤状态展示和报告持久化，因此 stock-001 继续保持 in_progress。"
     },
     {
       "id": "stock-002",

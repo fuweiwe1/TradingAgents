@@ -32,6 +32,7 @@ import {
   Bot,
   Info,
   MailOpen,
+  LineChart,
 } from "lucide-react"
 // SessionStatusIcons no longer used - icons come from dynamic sessionStatuses
 import { SourceAvatar } from "@/components/ui/source-avatar"
@@ -76,7 +77,7 @@ import { CompactSessionListFilter } from "./CompactSessionListFilter"
 import type { ChatDisplayHandle } from "./ChatDisplay"
 import { LeftSidebar } from "./LeftSidebar"
 import { useSession } from "@/hooks/useSession"
-import { ensureSessionMessagesLoadedAtom } from "@/atoms/sessions"
+import { ensureSessionMessagesLoadedAtom, replaceLoadedSessionAtom } from "@/atoms/sessions"
 import { AppShellProvider, type AppShellContextType } from "@/context/AppShellContext"
 import { EscapeInterruptProvider, useEscapeInterrupt } from "@/context/EscapeInterruptContext"
 import { useTheme } from "@/context/ThemeContext"
@@ -121,6 +122,7 @@ import { SkillsListPanel } from "./SkillsListPanel"
 import { AutomationsListPanel } from "../automations/AutomationsListPanel"
 import { APP_EVENTS, AGENT_EVENTS, type AutomationFilterKind, AUTOMATION_TYPE_TO_FILTER_KIND } from "../automations/types"
 import { useAutomations } from "@/hooks/useAutomations"
+import { StockResearchDialog } from "@/stock-research/StockResearchDialog"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { PanelHeader } from "./PanelHeader"
 import { FabNewChat } from "./FabNewChat"
@@ -561,6 +563,7 @@ function AppShellContent({
 
   // What's New overlay
   const [showWhatsNew, setShowWhatsNew] = React.useState(false)
+  const [stockResearchDialogOpen, setStockResearchDialogOpen] = React.useState(false)
   const [releaseNotesContent, setReleaseNotesContent] = React.useState('')
   const [hasUnseenReleaseNotes, setHasUnseenReleaseNotes] = React.useState(false)
 
@@ -610,6 +613,13 @@ function AppShellContent({
     // Not open in any panel — navigate() updates the focused panel
     navigateToSession(sessionId)
   }, [store, setFocusedPanel, navigateToSession])
+
+  const refreshStockResearchSession = useCallback(async (sessionId: string) => {
+    const loadedSession = await window.electronAPI.getSessionMessages(sessionId)
+    if (loadedSession) {
+      store.set(replaceLoadedSessionAtom, loadedSession)
+    }
+  }, [store])
 
   const sessionsContext = React.useMemo(() => {
     if (isSessionsNavigation(navState)) {
@@ -2253,6 +2263,19 @@ function AppShellContent({
                     </TooltipTrigger>
                     <TooltipContent side="right">{newChatHotkey}</TooltipContent>
                   </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        onClick={() => setStockResearchDialogOpen(true)}
+                        className="mt-1 w-full justify-start gap-2 py-[7px] px-2 text-[13px] font-normal rounded-[6px] shadow-minimal bg-background"
+                      >
+                        <LineChart className="h-3.5 w-3.5 shrink-0" />
+                        Stock Research
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">Start stock research</TooltipContent>
+                  </Tooltip>
                 </div>
                 {/* Primary Nav: All Sessions (▸ Statuses, Flagged, Archived), Labels | Sources, Skills | Settings */}
                 {/* pb-4 provides clearance so the last item scrolls above the mask-fade-bottom gradient */}
@@ -3260,6 +3283,14 @@ function AppShellContent({
             {isAutoCompact && isSessionsNavigation(navState) && !navState.details && (
               <FabNewChat onClick={() => handleNewChat()} />
             )}
+
+            <StockResearchDialog
+              open={stockResearchDialogOpen}
+              workspaceId={activeWorkspaceId}
+              onOpenChange={setStockResearchDialogOpen}
+              onRefreshSession={refreshStockResearchSession}
+              onNavigateToSession={navigateToSessionInPanel}
+            />
             </div>
           }
           navigatorWidth={isAutoCompact ? sessionListWidth : (effectiveSidebarAndNavigatorHidden ? 0 : sessionListWidth)}

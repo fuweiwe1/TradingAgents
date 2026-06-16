@@ -181,6 +181,8 @@ import type {
   Session,
   UnreadSummary,
   CreateSessionOptions,
+  CreateStockResearchRunRequest,
+  CreateStockResearchRunResult,
   FileAttachment,
   SendMessageOptions,
   SessionEvent,
@@ -220,6 +222,7 @@ export interface ElectronAPI {
   markAllSessionsRead(workspaceId: string): Promise<void>
   getSessionMessages(sessionId: string): Promise<Session | null>
   createSession(workspaceId: string, options?: CreateSessionOptions): Promise<Session>
+  createStockResearchRun(workspaceId: string, request: CreateStockResearchRunRequest): Promise<CreateStockResearchRunResult>
   deleteSession(sessionId: string): Promise<void>
   sendMessage(sessionId: string, message: string, attachments?: FileAttachment[], storedAttachments?: StoredAttachmentType[], options?: SendMessageOptions): Promise<void>
   cancelProcessing(sessionId: string, silent?: boolean): Promise<void>

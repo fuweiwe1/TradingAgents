@@ -154,4 +154,28 @@
   - `bun run typecheck:all`：失败，当前基线问题包括缺少 `C:/craft_agents/tsconfig.base.json`、`@types/cacheable-request`/`keyv` 类型不匹配、`session-tools-core` target/downlevel 类型问题；本轮不扩大范围修复。
 - 当前进度：
   - `stock-001` 保持 `in_progress`：后端创建研究会话入口已完成，UI 工作台、步骤状态展示和报告持久化仍未完成。
-  - 本地提交已完成；推送 `origin/stock-001-research-run` 失败，原因是无法连接 `github.com:443`，下一轮网络恢复后可重试 `git push -u origin stock-001-research-run`。
+  - 本地提交已完成；用户已手动推送 `origin/stock-001-research-run`，本地分支现已追踪远端，远端 HEAD 为 `a07b94e`。
+
+### Session 006
+
+- 日期：2026-06-16
+- 本轮目标：继续 `stock-001`，接入 renderer 的第一个股票研究入口。
+- 已完成：
+  - 确认 `origin/stock-001-research-run` 已存在，远端 HEAD 为 `a07b94e`，本地分支正在追踪该远端分支。
+  - 创建 `docs/superpowers/plans/2026-06-16-stock-001-renderer-entry.md`。
+  - 将 `stockResearch:createRun` 暴露为 `window.electronAPI.createStockResearchRun`。
+  - 新增 renderer helper `startStockResearch`：提交股票代码、调用后端创建研究 run、刷新新 session、导航到该 session。
+  - 新增 `StockResearchDialog`，并在左侧栏 `New Session` 下方加入 `Stock Research` 入口。
+- TDD 记录：
+  - `start-stock-research.test.ts` 先因 `../start-stock-research` 缺失失败，再实现 helper 后通过。
+  - `ipc-channels.test.ts` 先因 `stockResearch:createRun` 未加入 expected channel list 失败，再补齐 API/channel 映射后通过。
+- 运行过的验证：
+  - `powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1`：通过。
+  - `git ls-remote --heads origin stock-001-research-run`：通过，返回 `a07b94e928ba4ff444561830a77d67d371b27bee`。
+  - `bun test apps/electron/src/renderer/stock-research/__tests__/start-stock-research.test.ts apps/electron/src/shared/__tests__/ipc-channels.test.ts`：通过，7 tests。
+  - `cd apps/electron && bun run typecheck`：通过。
+  - `cd apps/webui && bun run typecheck`：通过。
+  - `python -m json.tool feature_list.json`：通过。
+  - `git diff --check`：通过，仅有 Windows LF/CRLF 提醒。
+- 当前进度：
+  - `stock-001` 继续保持 `in_progress`：用户现在可以从 UI 发起股票研究并进入关联 Craft session；步骤状态展示和报告持久化仍未完成。

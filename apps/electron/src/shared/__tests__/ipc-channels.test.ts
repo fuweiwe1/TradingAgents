@@ -267,6 +267,7 @@ const EXPECTED_CHANNELS: string[] = [
   'statuses:changed',
   'statuses:list',
   'statuses:reorder',
+  'stockResearch:createRun',
   'system:homeDir',
   'system:isDebugMode',
   'system:versions',
