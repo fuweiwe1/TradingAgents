@@ -26,6 +26,8 @@ import { coerceInputText } from '@/lib/input-text'
 import { deriveSessionMessagesLoadState, formatSessionLoadFailure } from '@/lib/session-load'
 import { ensureSessionMessagesLoadedAtom, forceSessionMessagesReloadAtom, loadedSessionsAtom, sessionMetaMapAtom } from '@/atoms/sessions'
 import { getSessionTitle } from '@/utils/session'
+import { StockResearchStepPanel } from '@/stock-research/StockResearchStepPanel'
+import { deriveStockResearchStepStatuses, isStockResearchSession } from '@/stock-research/step-status'
 // Model resolution: connection.defaultModel (no hardcoded defaults)
 import { resolveEffectiveConnectionSlug, isSessionConnectionUnavailable } from '@config/llm-connections'
 
@@ -416,6 +418,10 @@ const ChatPage = React.memo(function ChatPage({ sessionId }: ChatPageProps) {
     : false
   // Use isAsyncOperationOngoing for shimmer effect (sharing, updating share, revoking, title regeneration)
   const isAsyncOperationOngoing = session?.isAsyncOperationOngoing || sessionMeta?.isAsyncOperationOngoing || false
+  const stockResearchSteps = React.useMemo(() => {
+    if (!session || !isStockResearchSession(session)) return null
+    return deriveStockResearchStepStatuses(session.messages ?? [])
+  }, [session])
 
   // Rename dialog state
   const [renameDialogOpen, setRenameDialogOpen] = React.useState(false)
@@ -772,6 +778,9 @@ const ChatPage = React.memo(function ChatPage({ sessionId }: ChatPageProps) {
       <div className="h-full flex flex-col">
         <PanelHeader  title={displayTitle} titleMenu={titleMenu} compactTitleMenu={compactTitleMenu} leadingAction={leadingAction} actions={headerActions} rightSidebarButton={rightSidebarButton} isRegeneratingTitle={isAsyncOperationOngoing} />
         <div className="flex-1 flex flex-col min-h-0">
+          {stockResearchSteps && (
+            <StockResearchStepPanel steps={stockResearchSteps} />
+          )}
           <ChatDisplay
             ref={chatDisplayRef}
             session={session}

@@ -22,6 +22,10 @@ import type {
   CredentialInputMode as SharedCredentialInputMode,
   CredentialAuthRequest as SharedCredentialAuthRequest,
 } from '../agent/index'
+export type {
+  CreateStockResearchRunRequest,
+  CreateStockResearchRunResult,
+} from '../stock'
 
 // Re-export generateMessageId for handler convenience
 export { generateMessageId } from '@craft-agent/core/types'

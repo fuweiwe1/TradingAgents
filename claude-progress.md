@@ -3,10 +3,10 @@
 ## 当前已验证状态
 
 - 仓库根目录：`C:\craft_agents`
-- 当前目录状态：已初始化为 git 仓库，当前分支 `main`，remote `origin` 指向 `https://github.com/fuweiwe1/TradingAgents.git`。
+- 当前目录状态：已初始化为 git 仓库，当前分支 `stock-001-research-run`，remote `origin` 指向 `https://github.com/fuweiwe1/TradingAgents.git`。
 - 标准启动路径：Unix/Git Bash 使用 `bash ./init.sh`；Windows 无 Bash 时使用 `powershell -ExecutionPolicy Bypass -File .\init.ps1`。
 - 标准验证路径：`powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1`、`bun install --frozen-lockfile`、`bun run typecheck:shared`。
-- 当前最高优先级未完成功能：`stock-001`，实现单股研究五步流。
+- 当前最高优先级未完成功能：`stock-002`，实现股票模块本地 SQLite 存储。
 - 当前工作流基线：`setup-001`、`spec-001`、`infra-001` 已通过；Craft Agents OSS 基线与 Bun 依赖验证可恢复。
 - 当前 blocker：
   - 当前环境的 `bash ./init.sh` 仍会进入损坏的 WSL，失败原因是 `/bin/bash` 不存在；Windows 当前使用 `init.ps1` 作为标准入口。
@@ -126,3 +126,118 @@
 - 当前进度：
   - `infra-001` 已标记为 `passing`。
   - 下一步执行 `stock-001`：先定位 Craft Agents 现有 LLM connection 默认模型读取路径和 session 创建路径，再设计单股研究 run 的最小实现。
+
+### Session 005
+
+- 日期：2026-06-16
+- 本轮目标：推进 `stock-001` 的首个后端切片。
+- 已完成：
+  - 创建并切换到分支 `stock-001-research-run`。
+  - 创建 `docs/superpowers/plans/2026-06-16-stock-001-single-stock-research.md`。
+  - 定位默认 LLM 连接路径：`SessionManager.createSession` / `getOrCreateAgent` 会通过 `resolveSessionConnection` 读取 session、workspace、global 默认连接；StockCraft v1 handler 不传 `model` 或 `llmConnection`，从而复用现有默认模型。
+  - 新增 `packages/shared/src/stock`：股票代码识别、研究步骤定义、五步研究初始提示词。
+  - 新增 `stockResearch:createRun` RPC：创建一个 Craft session 并发送五步研究提示。
+  - 将新 RPC 纳入 routing 分类、core handler 注册和注册覆盖测试。
+  - 修正 `settings.HANDLED_CHANNELS` 漏声明已实际注册的 `rtk:*` channel，使注册覆盖测试与实际注册行为一致。
+- TDD 记录：
+  - `symbols.test.ts` 先因 `../symbols` 缺失失败，再实现 parser 后通过。
+  - `research-run.test.ts` 先因 `../research-run` 缺失失败，再实现提示词 helper 后通过。
+  - `stock-research.test.ts` 先因 `./stock-research` 缺失失败，再实现 RPC handler 后通过。
+- 运行过的验证：
+  - `bun test packages/shared/src/stock/__tests__/symbols.test.ts packages/shared/src/stock/__tests__/research-run.test.ts packages/server-core/src/handlers/rpc/stock-research.test.ts`：通过，9 tests。
+  - `bun test packages/shared/src/protocol/__tests__/routing.test.ts apps/electron/src/main/handlers/__tests__/registration.test.ts apps/electron/src/main/handlers/__tests__/registration-profiles.test.ts`：通过，12 tests。
+  - `bun run typecheck:shared`：通过。
+  - `cd packages/server-core && bun run typecheck`：通过。
+  - 收尾复验：`powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1` 通过。
+  - 收尾复验：`python -m json.tool feature_list.json` 通过。
+  - 收尾复验：上述 9 个 focused tests、12 个 routing/registration tests、`bun run typecheck:shared`、`cd packages/server-core && bun run typecheck` 均重新通过。
+  - `bun run typecheck:all`：失败，当前基线问题包括缺少 `C:/craft_agents/tsconfig.base.json`、`@types/cacheable-request`/`keyv` 类型不匹配、`session-tools-core` target/downlevel 类型问题；本轮不扩大范围修复。
+- 当前进度：
+  - `stock-001` 保持 `in_progress`：后端创建研究会话入口已完成，UI 工作台、步骤状态展示和报告持久化仍未完成。
+  - 本地提交已完成；用户已手动推送 `origin/stock-001-research-run`，本地分支现已追踪远端，远端 HEAD 为 `a07b94e`。
+
+### Session 006
+
+- 日期：2026-06-16
+- 本轮目标：继续 `stock-001`，接入 renderer 的第一个股票研究入口。
+- 已完成：
+  - 确认 `origin/stock-001-research-run` 已存在，远端 HEAD 为 `a07b94e`，本地分支正在追踪该远端分支。
+  - 创建 `docs/superpowers/plans/2026-06-16-stock-001-renderer-entry.md`。
+  - 将 `stockResearch:createRun` 暴露为 `window.electronAPI.createStockResearchRun`。
+  - 新增 renderer helper `startStockResearch`：提交股票代码、调用后端创建研究 run、刷新新 session、导航到该 session。
+  - 新增 `StockResearchDialog`，并在左侧栏 `New Session` 下方加入 `Stock Research` 入口。
+- TDD 记录：
+  - `start-stock-research.test.ts` 先因 `../start-stock-research` 缺失失败，再实现 helper 后通过。
+  - `ipc-channels.test.ts` 先因 `stockResearch:createRun` 未加入 expected channel list 失败，再补齐 API/channel 映射后通过。
+- 运行过的验证：
+  - `powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1`：通过。
+  - `git ls-remote --heads origin stock-001-research-run`：通过，返回 `a07b94e928ba4ff444561830a77d67d371b27bee`。
+  - `bun test apps/electron/src/renderer/stock-research/__tests__/start-stock-research.test.ts apps/electron/src/shared/__tests__/ipc-channels.test.ts`：通过，7 tests。
+  - `cd apps/electron && bun run typecheck`：通过。
+  - `cd apps/webui && bun run typecheck`：通过。
+  - `python -m json.tool feature_list.json`：通过。
+  - `git diff --check`：通过，仅有 Windows LF/CRLF 提醒。
+- 当前进度：
+  - `stock-001` 继续保持 `in_progress`：用户现在可以从 UI 发起股票研究并进入关联 Craft session；步骤状态展示和报告持久化仍未完成。
+
+### Session 007
+
+- 日期：2026-06-16
+- 本轮目标：继续 `stock-001`，在股票研究会话内展示五步研究状态。
+- 已完成：
+  - 创建 `docs/superpowers/plans/2026-06-16-stock-001-step-status-panel.md`。
+  - 新增 `apps/electron/src/renderer/stock-research/step-status.ts`：识别 `Stock Research: ...` 会话，并从 assistant/plan 消息标题推导五步状态。
+  - 新增 `StockResearchStepPanel`：在股票研究会话顶部展示数据收集、分析师观点、牛熊辩论、风险审查、报告生成五步状态。
+  - 将步骤面板接入 `ChatPage`，只在已加载的 Stock Research 会话中显示。
+- TDD 记录：
+  - `step-status.test.ts` 先因 `../step-status` 缺失失败，再实现 helper 后通过。
+- 运行过的验证：
+  - `powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1`：通过。
+  - `bun test apps/electron/src/renderer/stock-research/__tests__/step-status.test.ts apps/electron/src/renderer/stock-research/__tests__/start-stock-research.test.ts apps/electron/src/shared/__tests__/ipc-channels.test.ts`：通过，11 tests。
+  - `cd apps/electron && bun run typecheck`：通过。
+- 当前进度：
+  - `stock-001` 继续保持 `in_progress`：后端入口、UI 发起入口和会话内五步状态展示已完成；报告持久化仍未完成，需等待 `stock-002` SQLite 边界。
+
+### Session 008
+
+- 日期：2026-06-16
+- 本轮目标：收敛 `stock-001` 验收证据，并按用户选择推送到现有 PR 分支。
+- 已完成：
+  - 按开工流程重新确认当前目录为 `C:\craft_agents`，读取 `claude-progress.md` 与 `feature_list.json`，查看最近 5 个提交，并确认工作区起始状态干净。
+  - 运行 Windows 标准入口 `powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1`，确认当前平台启动路径可恢复。
+  - 扩展 `packages/server-core/src/handlers/rpc/stock-research.test.ts`：`stockResearch:createRun` 现在分别覆盖 `600519`、`00700.HK`、`AAPL`，并断言三类输入都会创建一个 `Stock Research: ...` Craft session、返回标准五步、发送包含股票展示代码和“报告生成”的五步提示。
+  - 将 `stock-001` 标记为 `passing`；报告/步骤结果持久化明确留给 `stock-002` 的 SQLite 边界，不再阻塞本功能。
+- TDD/验证记录：
+  - 本轮没有修改生产代码；新增的是验收覆盖测试，因此未进入新的 production red/green 循环。
+  - `bun test packages/shared/src/stock/__tests__/symbols.test.ts packages/shared/src/stock/__tests__/research-run.test.ts packages/server-core/src/handlers/rpc/stock-research.test.ts`：通过，11 tests，0 fail。
+  - 收尾复验：`bun test packages/shared/src/stock/__tests__/symbols.test.ts packages/shared/src/stock/__tests__/research-run.test.ts packages/server-core/src/handlers/rpc/stock-research.test.ts apps/electron/src/renderer/stock-research/__tests__/step-status.test.ts apps/electron/src/renderer/stock-research/__tests__/start-stock-research.test.ts apps/electron/src/shared/__tests__/ipc-channels.test.ts`：通过，22 tests，0 fail。
+  - 收尾复验：`bun run typecheck:shared` 通过。
+  - 收尾复验：`cd packages/server-core && bun run typecheck` 通过。
+  - 收尾复验：`cd apps/electron && bun run typecheck` 通过。
+- 当前进度：
+  - `stock-001` 已达到当前功能清单的完成定义：A股、港股、美股输入均有自动化验收证据，研究 run 关联一个 Craft session，UI 可发起并展示五步状态。
+  - 下一步最高优先级功能为 `stock-002`：实现股票模块本地 SQLite 存储。
+  - 已知环境 blocker 仍为：当前 Windows/WSL 环境运行 `bash ./init.sh` 会因 `/bin/bash` 不存在失败；当前平台继续使用 `init.ps1`。
+
+### Session 009
+
+- Date: 2026-06-16
+- Goal: Apply the GitHub Actions `validate` baseline fix to PR #1 (`stock-001-research-run`) without mixing in stock-002 work.
+- Root cause:
+  - `packages/session-tools-core/tsconfig.json` and `packages/pi-agent-server/tsconfig*.json` extended missing `../../tsconfig.base.json`.
+  - Without that shared base config, TypeScript fell back to an old target and produced the GitHub errors for missing `tsconfig.base.json`, `Set` iteration/downleveling, Unicode regex flags, and third-party `.d.ts` files.
+  - After restoring the base config, `packages/pi-agent-server` exposed three real strict nullability/indexing errors.
+  - Later CI i18n steps also had baseline issues: locale files were unsorted, and `lint:i18n:coverage` referenced a missing script.
+- Done:
+  - Cherry-picked the CI baseline fix onto `stock-001-research-run`.
+  - Added root `tsconfig.base.json` with shared strict ESNext/bundler compiler options.
+  - Fixed `packages/pi-agent-server` indexed access/nullability issues in prefetch logging, DuckDuckGo redirect extraction, and web-fetch content-type parsing.
+  - Added `scripts/check-i18n-coverage.ts` for static `t(...)`, `i18n.t(...)`, and `<Trans i18nKey>` key coverage against `en.json`, including plural base-key handling.
+  - Updated `feature_list.json` with infra evidence and current validation limits.
+- Verification:
+  - `powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1`: passed before cherry-pick.
+  - Full post-cherry-pick verification is required before push.
+- Remaining risk/blocker:
+  - Full local `validate:ci` cannot be completed on this Windows machine until `python3`/`uv` are available. GitHub Actions installs uv and runs on Ubuntu, so this is expected to differ from local.
+- Next step:
+  - Finish cherry-pick, run final checks, and push `stock-001-research-run` to update PR #1.
