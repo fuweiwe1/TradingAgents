@@ -143,7 +143,8 @@
         "2026-06-16: 已新增 stockResearch:addWatchlistItem/listWatchlistItems/removeWatchlistItem/saveReport/listReports/getReport RPC；renderer 仅通过 ElectronAPI/channel-map 调用，不直接访问 SQLite。",
         "2026-06-16: focused tests 通过：bun test packages/server-core/src/stock/stock-storage.test.ts packages/server-core/src/handlers/rpc/stock-research.test.ts packages/shared/src/protocol/__tests__/routing.test.ts apps/electron/src/shared/__tests__/ipc-channels.test.ts apps/electron/src/main/handlers/__tests__/registration.test.ts apps/electron/src/main/handlers/__tests__/registration-profiles.test.ts。",
         "2026-06-16: typecheck 通过：bun run typecheck:shared；cd packages/server-core && bun run typecheck；cd apps/electron && bun run typecheck。",
-        "2026-06-16: powershell -NoProfile -ExecutionPolicy Bypass -File .\\init.ps1 通过。"
+        "2026-06-16: powershell -NoProfile -ExecutionPolicy Bypass -File .\\init.ps1 通过。",
+        "2026-06-16: PR #2 发布前已合入本地 stock-001 CI baseline ancestor，避免重复显示 main 已有的 validate 修复；focused tests 27 个、shared/server/electron typecheck、init.ps1、json.tool、git diff --check 均通过。"
       ],
       "notes": "当前实现使用 Bun 内置 bun:sqlite，而不是原计划的 better-sqlite3；原因是 better-sqlite3 在本机安装超时且原生 binding 探针失败。SQLite 由 Electron/headless server 注入 server-core handler，默认路径为 ~/.craft-agent/stockcraft.sqlite。Reports/Watchlist UI 后续复用已新增 RPC。"
     },

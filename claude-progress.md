@@ -315,5 +315,14 @@
   - 尝试 `git fetch origin main` 失败，原因是当前网络连接 GitHub 443 超时。
   - 改用本地已存在的 `stock-001-research-run` 分支执行 `git merge stock-001-research-run --no-edit`，使 `codex/stock-002-sqlite-storage` 包含 main 已有的 CI baseline ancestor，避免 PR diff 重复显示该修复。
   - 合并仅在 `claude-progress.md` 产生冲突；已保留 `stock-002` 记录、CI baseline 记录和 PR #2 发布记录。
-- 下一步：
-  - 完成 merge commit，跑 focused tests/typecheck，推送更新 PR #2。
+- 验证记录：
+  - `python -m json.tool feature_list.json`：通过。
+  - `powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1`：通过。
+  - `git diff --check`：通过。
+  - `bun test packages/server-core/src/stock/stock-storage.test.ts packages/server-core/src/handlers/rpc/stock-research.test.ts packages/shared/src/protocol/__tests__/routing.test.ts apps/electron/src/shared/__tests__/ipc-channels.test.ts apps/electron/src/main/handlers/__tests__/registration.test.ts apps/electron/src/main/handlers/__tests__/registration-profiles.test.ts apps/electron/src/renderer/stock-research/__tests__/start-stock-research.test.ts`：通过，27 tests，0 fail。
+  - `bun run typecheck:shared`：通过。
+  - `cd packages/server-core && bun run typecheck`：通过。
+  - `cd apps/electron && bun run typecheck`：通过。
+- 当前进度：
+  - 已生成 merge commit `8c6059d`，`codex/stock-002-sqlite-storage` 当前比远端多 2 个提交。
+  - 下一步是推送分支并重新确认 PR #2 diff 与 GitHub Actions 状态。
