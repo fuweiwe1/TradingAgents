@@ -3,7 +3,7 @@
 ## 当前上下文
 
 - 项目目标：基于 Craft Agents OSS 套壳/扩展为股票研究桌面工作台，工作名 `StockCraft`。
-- 当前阶段：`stock-001` 单股研究五步流已通过，下一步进入 `stock-002` 股票模块本地 SQLite 存储。
+- 当前阶段：`stock-001` 单股研究五步流已通过；`stock-002` 本地 SQLite 存储已通过；下一步进入 `stock-003` 独立 Reports 中心。
 - 用户已确认的关键架构决策：
   - 产品形态：Craft Agents 内核 + 股票研究工作台。
   - 用户定位：个人投资研究。
@@ -13,32 +13,45 @@
   - 智能体流程：五步标准流。
   - LLM：复用 Craft Agents 现有 LLM connection 系统；v1 只使用单连接默认模型。
   - 数据源：Source 优先，由 Agent 调用 Source 工具。
-  - 存储：新增本地 SQLite，使用 `better-sqlite3`。
+  - 存储：新增本地 SQLite；当前实现使用 Bun 内置 `bun:sqlite`。
   - 会话模型：一只股票一次研究对应一个 Craft session。
 
 ## 当前状态
 
-- `C:\craft_agents` 是 git 仓库，当前分支为 `stock-001-research-run`。
+- `C:\craft_agents` 是 git 仓库，当前分支为 `codex/stock-002-sqlite-storage`。
 - 当前仓库已经合入 Craft Agents OSS 代码基线，并配置 `upstream` fetch 为 `https://github.com/craft-ai-agents/craft-agents-oss.git`，push 为 `DISABLED`。
 - 已安装 Bun `1.3.10` 到 `C:\Users\-\.bun\bin\bun.exe`，与仓库 CI 配置一致。
-- `init.ps1` 会在新 PowerShell 尚未刷新 PATH 时自动识别 `$HOME\.bun\bin\bun.exe`。
-- `bun.lock` 已对齐当前 workspace：版本为 `0.10.3`，已移除不存在的 `apps/marketing`、`packages/craft-cli`、`packages/craft-agents-commands` 条目。
 - Windows 标准入口 `powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1` 已通过。
 - 当前环境运行 `bash ./init.sh` 仍失败，WSL 中缺少 `/bin/bash`；Windows 当前继续使用 `init.ps1`。
-- `bun install --frozen-lockfile` 已通过。
-- `bun run typecheck:shared` 已通过。
-- `packages/server-core` 的 `bun run typecheck` 已通过。
-- `stockResearch:createRun` 后端入口已实现：解析 A股/港股/美股代码，创建一个 Craft session，并发送五步研究初始提示词；该入口不传 `model` 或 `llmConnection`，复用 Craft Agents 现有默认 LLM connection。
-- `stockResearch:createRun` RPC 验收覆盖已补齐：`600519`、`00700.HK`、`AAPL` 都会创建 `Stock Research: ...` Craft session，并发送包含股票展示代码和“报告生成”的五步提示。
-- 当前功能分支已追踪 `origin/stock-001-research-run`，最新 PR 为 `https://github.com/fuweiwe1/TradingAgents/pull/1`。
-- `window.electronAPI.createStockResearchRun` 已接入；左侧栏 `Stock Research` 按钮会打开股票代码输入弹窗，提交后创建研究 session 并导航过去。
-- 股票研究会话顶部已接入 `StockResearchStepPanel`，会根据 assistant/plan 消息中的五步标题展示 `pending`、`in_progress`、`completed` 状态。
-- `apps/electron` 的 `bun run typecheck` 已通过。
-- `feature_list.json` 中 `stock-001` 已标记为 `passing`；报告/步骤结果持久化留给 `stock-002`，不再阻塞 `stock-001`。
+- `stock-001` 已标记为 `passing`：A股/港股/美股输入可创建一个 `Stock Research: ...` Craft session，UI 可发起并在会话内展示五步状态。
+- `stock-002` 已标记为 `passing`：
+  - `packages/server-core/src/stock/StockStorageService` 初始化 `stock_symbols`、`watchlist_items`、`research_runs`、`research_steps`、`research_reports` 五张表。
+  - Watchlist 支持新增、查询、删除。
+  - Research run 支持创建，并自动初始化五个 pending steps。
+  - Research report 支持保存、列表查询、详情打开。
+  - `stockResearch:createRun` 返回 `runId` 并持久化关联 Craft session id 的 research run。
+  - 新增 RPC：`stockResearch:addWatchlistItem`、`stockResearch:listWatchlistItems`、`stockResearch:removeWatchlistItem`、`stockResearch:saveReport`、`stockResearch:listReports`、`stockResearch:getReport`。
+  - Renderer 只通过 `ElectronAPI` / RPC 访问股票存储，不直接访问 SQLite。
+- SQLite 数据库当前由 Electron main 与 headless server 注入到 server-core，路径为 `~/.craft-agent/stockcraft.sqlite`。
+- `better-sqlite3` 曾按原计划尝试安装，但本机两次 `bun add better-sqlite3 @types/better-sqlite3` 超时，且探针报原生 binding 缺失；本轮使用 `bun:sqlite` 保持可验证。
+
+## 最近验证
+
+- `bun test packages/server-core/src/stock/stock-storage.test.ts`：通过，3 tests。
+- `bun test packages/server-core/src/handlers/rpc/stock-research.test.ts packages/shared/src/protocol/__tests__/routing.test.ts`：通过，13 tests。
+- `bun test apps/electron/src/shared/__tests__/ipc-channels.test.ts apps/electron/src/main/handlers/__tests__/registration.test.ts apps/electron/src/main/handlers/__tests__/registration-profiles.test.ts`：通过，9 tests。
+- focused 收尾复验：`bun test packages/server-core/src/stock/stock-storage.test.ts packages/server-core/src/handlers/rpc/stock-research.test.ts packages/shared/src/protocol/__tests__/routing.test.ts apps/electron/src/shared/__tests__/ipc-channels.test.ts apps/electron/src/main/handlers/__tests__/registration.test.ts apps/electron/src/main/handlers/__tests__/registration-profiles.test.ts`：通过，25 tests。
+- `bun test apps/electron/src/renderer/stock-research/__tests__/start-stock-research.test.ts`：通过，2 tests。
+- `bun run typecheck:shared`：通过。
+- `cd packages/server-core && bun run typecheck`：通过。
+- `cd apps/electron && bun run typecheck`：通过。
+- `python -m json.tool feature_list.json`：通过。
+- `powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1`：通过。
+- `git diff --check`：通过，仅有 Windows LF/CRLF 提醒。
 
 ## 下一步建议
 
-1. 继续 `stock-002`：先设计 SQLite schema 与 main/server 边界，再实现 Watchlist、研究 run、步骤结果和报告持久化的最小切片。
-2. 不要让 renderer 直接访问 SQLite；继续通过 IPC/RPC 经过 main/server boundary。
-3. 报告中心、Markdown 导出等独立体验属于 `stock-003`，不要在 `stock-002` 初始切片中过度扩展。
+1. 继续 `stock-003`：实现独立 Reports 中心，复用 `stockResearch:listReports` / `stockResearch:getReport`。
+2. 如果 Reports 中心需要按 workspace 隔离数据，先在 `stock-002` 存储层加 `workspace_id` 或改成 workspace-scoped database，再接 UI。
+3. Watchlist 独立页面属于 `stock-004`，不要在 `stock-003` 中扩大范围。
 4. 注意：`bun run typecheck:all` 当前有上游基线问题，后续切片验证以 focused tests、相关 package typecheck、`typecheck:shared` 和 `init.ps1` 为准，除非专门修复全量 typecheck。

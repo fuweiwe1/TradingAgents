@@ -218,3 +218,40 @@
   - `stock-001` 已达到当前功能清单的完成定义：A股、港股、美股输入均有自动化验收证据，研究 run 关联一个 Craft session，UI 可发起并展示五步状态。
   - 下一步最高优先级功能为 `stock-002`：实现股票模块本地 SQLite 存储。
   - 已知环境 blocker 仍为：当前 Windows/WSL 环境运行 `bash ./init.sh` 会因 `/bin/bash` 不存在失败；当前平台继续使用 `init.ps1`。
+
+### Session 009
+
+- 日期：2026-06-16
+- 本轮目标：继续 `stock-002`，实现股票模块本地 SQLite 存储的第一个可验收切片。
+- 已完成：
+  - 创建并切换到分支 `codex/stock-002-sqlite-storage`。
+  - 创建 `docs/superpowers/plans/2026-06-16-stock-002-sqlite-storage.md`。
+  - 新增 `packages/server-core/src/stock/StockStorageService`，负责初始化 `stock_symbols`、`watchlist_items`、`research_runs`、`research_steps`、`research_reports` 五张表。
+  - 新增 Watchlist 新增/列表/删除、research run 创建、五步 research step 初始化、报告保存/列表/详情读取能力。
+  - `stockResearch:createRun` 现在返回 `runId`，并持久化一个关联 Craft session id 的 research run。
+  - 新增并分类 RPC：`stockResearch:addWatchlistItem`、`stockResearch:listWatchlistItems`、`stockResearch:removeWatchlistItem`、`stockResearch:saveReport`、`stockResearch:listReports`、`stockResearch:getReport`。
+  - 将新 RPC 暴露到 Electron `CHANNEL_MAP` 和 `ElectronAPI` 类型；renderer 仍然只通过 RPC/ElectronAPI 访问，不直接访问 SQLite。
+  - Electron main 与 headless server 注入同一个 server-side stock storage service，数据库路径为 `~/.craft-agent/stockcraft.sqlite`。
+- TDD 记录：
+  - `stock-storage.test.ts` 先因 `./stock-storage` 缺失失败，再实现服务后通过。
+  - `stock-research.test.ts` 先因 `runId` 缺失和新 handler 未注册失败，再补齐 RPC 契约与 handler 后通过。
+  - `ipc-channels.test.ts` 先因新 channel 未加入稳定清单失败，再补齐清单后通过。
+- 运行过的验证：
+  - `bun test packages/server-core/src/stock/stock-storage.test.ts`：通过，3 tests。
+  - `bun test packages/server-core/src/handlers/rpc/stock-research.test.ts packages/shared/src/protocol/__tests__/routing.test.ts`：通过，13 tests。
+  - `bun test apps/electron/src/shared/__tests__/ipc-channels.test.ts apps/electron/src/main/handlers/__tests__/registration.test.ts apps/electron/src/main/handlers/__tests__/registration-profiles.test.ts`：通过，9 tests。
+  - focused 收尾复验：`bun test packages/server-core/src/stock/stock-storage.test.ts packages/server-core/src/handlers/rpc/stock-research.test.ts packages/shared/src/protocol/__tests__/routing.test.ts apps/electron/src/shared/__tests__/ipc-channels.test.ts apps/electron/src/main/handlers/__tests__/registration.test.ts apps/electron/src/main/handlers/__tests__/registration-profiles.test.ts` 通过，25 tests。
+  - `bun test apps/electron/src/renderer/stock-research/__tests__/start-stock-research.test.ts`：通过，2 tests。
+  - `bun run typecheck:shared`：通过。
+  - `cd packages/server-core && bun run typecheck`：通过。
+  - `cd apps/electron && bun run typecheck`：通过。
+  - `python -m json.tool feature_list.json`：通过。
+  - `powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1`：通过。
+  - `git diff --check`：通过，仅有 Windows LF/CRLF 提醒。
+- 偏差与风险：
+  - Spec/feature notes 原计划使用 `better-sqlite3`。本机两次 `bun add better-sqlite3 @types/better-sqlite3` 超时，且实际探针报 `Could not locate the bindings file`，原生 binding 未构建成功；为保持当前 Bun workspace 可验证，本轮改用 Bun 内置 `bun:sqlite`。
+  - 当前数据库为 app/server 级 `~/.craft-agent/stockcraft.sqlite`，未按 workspace 拆分；当前验收未要求 workspace 隔离，后续若 Reports/Watchlist 需要跨 workspace 隔离，应加 `workspace_id` 或 workspace-scoped database。
+  - Windows/WSL 环境运行 `bash ./init.sh` 仍会因 `/bin/bash` 不存在失败；当前平台继续使用 `init.ps1`。
+- 当前进度：
+  - `stock-002` 已标记为 `passing`：空数据库 schema、Watchlist 增删查、报告保存/列表/详情、renderer 不直连 SQLite 均有自动化或架构证据。
+  - 下一步最高优先级功能为 `stock-003`：实现独立 Reports 中心。

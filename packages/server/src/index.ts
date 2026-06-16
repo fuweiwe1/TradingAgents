@@ -31,6 +31,7 @@ import { readFileSync, existsSync } from 'node:fs'
 import { version as packageVersion } from '../package.json'
 import { enableDebug } from '@craft-agent/shared/utils/debug'
 import { bootstrapServer, startHealthHttpServer, generateServerToken } from '@craft-agent/server-core/bootstrap'
+import { StockStorageService } from '@craft-agent/server-core/stock'
 import { validateSession, createWebuiHandler, nodeHttpAdapter } from '@craft-agent/server-core/webui'
 import type { WebuiHandler } from '@craft-agent/server-core/webui'
 import { getCredentialManager } from '@craft-agent/shared/credentials'
@@ -162,6 +163,14 @@ const waNodeBin = process.env.CRAFT_MESSAGING_NODE_BIN ?? 'node'
 // Built inside createHandlerDeps (needs sessionManager), populated with the WS
 // publisher after bootstrapServer resolves.
 let messagingHandle: MessagingBootstrapHandle | null = null
+let stockStorage: StockStorageService | null = null
+
+function getStockStorage(): StockStorageService {
+  stockStorage ??= new StockStorageService({
+    databasePath: join(homedir(), '.craft-agent', 'stockcraft.sqlite'),
+  })
+  return stockStorage
+}
 
 const instance = await (async () => {
   try {
@@ -224,6 +233,7 @@ const instance = await (async () => {
           platform,
           oauthFlowStore,
           messagingRegistry: messagingHandle.registry,
+          stockStorage: getStockStorage(),
         }
       },
       registerAllRpcHandlers: registerCoreRpcHandlers,
@@ -345,6 +355,8 @@ const shutdown = async () => {
       console.error('[messaging] dispose failed:', error)
     }
   }
+  stockStorage?.close()
+  stockStorage = null
   await instance.stop()
   process.exit(0)
 }

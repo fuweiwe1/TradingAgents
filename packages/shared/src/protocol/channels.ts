@@ -431,6 +431,12 @@ export const RPC_CHANNELS = {
   },
   stockResearch: {
     CREATE_RUN: 'stockResearch:createRun',
+    ADD_WATCHLIST_ITEM: 'stockResearch:addWatchlistItem',
+    LIST_WATCHLIST_ITEMS: 'stockResearch:listWatchlistItems',
+    REMOVE_WATCHLIST_ITEM: 'stockResearch:removeWatchlistItem',
+    SAVE_REPORT: 'stockResearch:saveReport',
+    LIST_REPORTS: 'stockResearch:listReports',
+    GET_REPORT: 'stockResearch:getReport',
   },
 } as const
 

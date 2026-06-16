@@ -91,6 +91,7 @@ import type { PlatformServices } from '../runtime/platform'
 import { createElectronPlatform } from './platform'
 import type { HandlerDeps } from './handlers/handler-deps'
 import { bootstrapServer, releaseServerLock } from '@craft-agent/server-core/bootstrap'
+import { StockStorageService } from '@craft-agent/server-core/stock'
 import { createMessagingBootstrap, type MessagingBootstrapHandle } from '@craft-agent/messaging-gateway'
 import { getCredentialManager } from '@craft-agent/shared/credentials'
 import { initModelRefreshService, getModelRefreshService, setFetcherPlatform } from '@craft-agent/server-core/model-fetchers'
@@ -213,6 +214,7 @@ let browserPaneManager: BrowserPaneManager | null = null
 let oauthFlowStore: OAuthFlowStore | null = null
 let moduleSink: EventSink | null = null
 let moduleClientResolver: ((webContentsId: number) => string | undefined) | null = null
+let stockStorage: StockStorageService | null = null
 
 // Messaging gateway: the bootstrap handle is created once sessionManager is
 // available (inside createHandlerDeps) and populated with the WS publisher
@@ -220,6 +222,13 @@ let moduleClientResolver: ((webContentsId: number) => string | undefined) | null
 // through createMessagingBootstrap — do not construct MessagingGatewayRegistry
 // directly.
 let messagingHandle: MessagingBootstrapHandle | null = null
+
+function getStockStorage(): StockStorageService {
+  stockStorage ??= new StockStorageService({
+    databasePath: join(homedir(), '.craft-agent', 'stockcraft.sqlite'),
+  })
+  return stockStorage
+}
 
 // Store pending deep link if app not ready yet (cold start)
 let pendingDeepLink: string | null = null
@@ -693,6 +702,7 @@ app.whenReady().then(async () => {
             browserPaneManager: browserPaneManager ?? undefined,
             oauthFlowStore: ofs,
             messagingRegistry: messagingHandle.registry,
+            stockStorage: getStockStorage(),
           }
         },
         // Headless: register only core handlers (no GUI handlers for browser, settings, etc.)
@@ -1196,7 +1206,7 @@ app.on('before-quit', async (event) => {
   }
 
   // Flush all pending session writes before quitting
-  if (sessionManager) {
+    if (sessionManager) {
     // Prevent quit until sessions are flushed
     event.preventDefault()
     try {
@@ -1207,6 +1217,8 @@ app.on('before-quit', async (event) => {
     }
     // Clean up SessionManager resources (file watchers, timers, etc.)
     sessionManager.cleanup()
+    stockStorage?.close()
+    stockStorage = null
 
     // Clean up browser pane instances
     if (browserPaneManager) {

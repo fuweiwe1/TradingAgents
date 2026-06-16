@@ -377,6 +377,12 @@ export const REMOTE_ELIGIBLE_CHANNELS = new Set<string>([
 
   // stockResearch — workspace-scoped research sessions
   RPC_CHANNELS.stockResearch.CREATE_RUN,
+  RPC_CHANNELS.stockResearch.ADD_WATCHLIST_ITEM,
+  RPC_CHANNELS.stockResearch.LIST_WATCHLIST_ITEMS,
+  RPC_CHANNELS.stockResearch.REMOVE_WATCHLIST_ITEM,
+  RPC_CHANNELS.stockResearch.SAVE_REPORT,
+  RPC_CHANNELS.stockResearch.LIST_REPORTS,
+  RPC_CHANNELS.stockResearch.GET_REPORT,
 
   // labels — workspace metadata
   RPC_CHANNELS.labels.LIST,

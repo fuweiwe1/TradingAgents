@@ -128,15 +128,23 @@
       "area": "storage",
       "title": "实现股票模块本地 SQLite 存储",
       "user_visible_behavior": "Watchlist、研究 run、步骤结果和报告可以本地持久化，应用重启后仍可查看。",
-      "status": "not_started",
+      "status": "passing",
       "verification": [
         "空用户目录启动时自动创建 schema。",
         "Watchlist 项可新增、查询、删除。",
         "研究报告可保存、列表查询、详情打开。",
         "renderer 不直接访问 SQLite。"
       ],
-      "evidence": [],
-      "notes": "计划使用 better-sqlite3。"
+      "evidence": [
+        "2026-06-16: ?? packages/server-core/src/stock/StockStorageService??? Bun ?? bun:sqlite ??? stock_symbols?watchlist_items?research_runs?research_steps?research_reports ????",
+        "2026-06-16: bun test packages/server-core/src/stock/stock-storage.test.ts ??????????????Watchlist ??/??/???research run ?? pending steps?????/??/???",
+        "2026-06-16: stockResearch:createRun ????? runId ?????? Craft session id ? research run?",
+        "2026-06-16: ?? stockResearch:addWatchlistItem/listWatchlistItems/removeWatchlistItem/saveReport/listReports/getReport RPC?renderer ??? ElectronAPI/channel-map ???????? SQLite?",
+        "2026-06-16: focused tests ???bun test packages/server-core/src/stock/stock-storage.test.ts packages/server-core/src/handlers/rpc/stock-research.test.ts packages/shared/src/protocol/__tests__/routing.test.ts apps/electron/src/shared/__tests__/ipc-channels.test.ts apps/electron/src/main/handlers/__tests__/registration.test.ts apps/electron/src/main/handlers/__tests__/registration-profiles.test.ts?",
+        "2026-06-16: typecheck ???bun run typecheck:shared?cd packages/server-core && bun run typecheck?cd apps/electron && bun run typecheck?",
+        "2026-06-16: powershell -NoProfile -ExecutionPolicy Bypass -File .\\init.ps1 ???"
+      ],
+      "notes": "?????? Bun ?? bun:sqlite???? better-sqlite3??????? better-sqlite3 ????? binding ??????SQLite ???? Electron/headless server ??? server-core handler???? ~/.craft-agent/stockcraft.sqlite??? Reports/Watchlist UI ?????? RPC?"
     },
     {
       "id": "stock-003",

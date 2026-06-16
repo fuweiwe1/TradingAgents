@@ -178,6 +178,7 @@ import type { WorkspaceInfo, Workspace, SessionMetadata, StoredAttachment as Sto
 // Import protocol types used by ElectronAPI (they come through the `export *` above,
 // but we need them in scope for the interface definition)
 import type {
+  AddStockWatchlistItemRequest,
   Session,
   UnreadSummary,
   CreateSessionOptions,
@@ -213,6 +214,10 @@ import type {
   DirectoryListingResult,
   RemoteSessionTransferPayload,
   ImportRemoteSessionTransferResult,
+  RemoveStockWatchlistItemResult,
+  SaveStockResearchReportRequest,
+  StockResearchReport,
+  StockWatchlistItem,
 } from '@craft-agent/shared/protocol'
 
 export interface ElectronAPI {
@@ -223,6 +228,12 @@ export interface ElectronAPI {
   getSessionMessages(sessionId: string): Promise<Session | null>
   createSession(workspaceId: string, options?: CreateSessionOptions): Promise<Session>
   createStockResearchRun(workspaceId: string, request: CreateStockResearchRunRequest): Promise<CreateStockResearchRunResult>
+  addStockWatchlistItem(workspaceId: string, request: AddStockWatchlistItemRequest): Promise<StockWatchlistItem>
+  listStockWatchlistItems(workspaceId: string): Promise<StockWatchlistItem[]>
+  removeStockWatchlistItem(workspaceId: string, id: string): Promise<RemoveStockWatchlistItemResult>
+  saveStockResearchReport(workspaceId: string, request: SaveStockResearchReportRequest): Promise<StockResearchReport>
+  listStockResearchReports(workspaceId: string): Promise<StockResearchReport[]>
+  getStockResearchReport(workspaceId: string, id: string): Promise<StockResearchReport>
   deleteSession(sessionId: string): Promise<void>
   sendMessage(sessionId: string, message: string, attachments?: FileAttachment[], storedAttachments?: StoredAttachmentType[], options?: SendMessageOptions): Promise<void>
   cancelProcessing(sessionId: string, silent?: boolean): Promise<void>
