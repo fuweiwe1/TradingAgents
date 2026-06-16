@@ -84,6 +84,7 @@
         "2026-06-16: powershell -NoProfile -ExecutionPolicy Bypass -File .\\init.ps1 通过，并提示可运行 bun install --frozen-lockfile 与 bun run typecheck:shared。",
         "2026-06-16: bun install --frozen-lockfile 通过。",
         "2026-06-16: bun run typecheck:shared 通过。",
+        "2026-06-16: init.ps1 已更新为自动识别 $HOME\\.bun\\bin\\bun.exe，避免新 PowerShell 尚未刷新 PATH 时误报缺少 Bun。",
         "2026-06-16: bash ./init.sh 在当前 Windows/WSL 环境仍失败，原因是 /bin/bash 不存在；当前平台使用 init.ps1。"
       ],
       "notes": "Craft Agents OSS 代码基线、Bun 依赖安装和 shared typecheck 已通过；当前 Windows 环境标准入口使用 init.ps1。"

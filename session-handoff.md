@@ -21,6 +21,7 @@
 - `C:\craft_agents` 是 git 仓库，当前分支为 `main`。
 - 当前仓库已经合入 Craft Agents OSS 代码基线，并配置 `upstream` fetch 为 `https://github.com/craft-ai-agents/craft-agents-oss.git`，push 为 `DISABLED`。
 - 已安装 Bun `1.3.10` 到 `C:\Users\-\.bun\bin\bun.exe`，与仓库 CI 配置一致。
+- `init.ps1` 会在新 PowerShell 尚未刷新 PATH 时自动识别 `$HOME\.bun\bin\bun.exe`。
 - `bun.lock` 已对齐当前 workspace：版本为 `0.10.3`，已移除不存在的 `apps/marketing`、`packages/craft-cli`、`packages/craft-agents-commands` 条目。
 - Windows 标准入口 `powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1` 已通过。
 - 当前环境运行 `bash ./init.sh` 仍失败，WSL 中缺少 `/bin/bash`；Windows 当前继续使用 `init.ps1`。

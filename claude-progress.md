@@ -113,10 +113,12 @@
   - 使用官方 registry 临时覆盖重算 `bun.lock`，避免用户级 `.npmrc` 的腾讯镜像 URL 写入锁文件。
   - 更新 `bun.lock`：workspace 版本对齐到 `0.10.3`，移除已不存在 workspace 及其遗留依赖。
   - 完成依赖安装并跑通 shared typecheck。
+  - 更新 `init.ps1`：当新终端尚未刷新 PATH 时，自动识别 `$HOME\.bun\bin\bun.exe` 并加入当前进程 PATH。
 - 运行过的验证：
   - `Get-Location`：确认当前目录为 `C:\craft_agents`。
   - `git log --oneline -5`：通过，最近提交为 `9cd3de9 Merge remote-tracking branch 'upstream/main'`。
   - `powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1`：通过，并提示可运行 `bun install --frozen-lockfile` 与 `bun run typecheck:shared`。
+  - `powershell -NoProfile -Command "bun --version"`：失败，说明系统级 PATH 尚未在新 PowerShell 中刷新；`init.ps1` 已通过默认路径兜底解决仓库启动检查。
   - `bash ./init.sh`：失败；WSL 报错 `execvpe(/bin/bash) failed: No such file or directory`，当前 Windows 环境继续使用 `init.ps1`。
   - `bun --version`：`1.3.10`。
   - `bun install --frozen-lockfile`：通过。

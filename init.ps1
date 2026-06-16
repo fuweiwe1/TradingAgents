@@ -4,6 +4,11 @@ Set-StrictMode -Version Latest
 $RootDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location -LiteralPath $RootDir
 
+$DefaultBunBin = Join-Path $HOME ".bun\bin"
+if (-not (Get-Command bun -ErrorAction SilentlyContinue) -and (Test-Path -LiteralPath (Join-Path $DefaultBunBin "bun.exe") -PathType Leaf)) {
+  $env:PATH = "$DefaultBunBin;$env:PATH"
+}
+
 Write-Host "==> Current directory: $(Get-Location)"
 
 Write-Host "==> Checking required files"
