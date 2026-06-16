@@ -137,15 +137,15 @@
         "renderer 不直接访问 SQLite。"
       ],
       "evidence": [
-        "2026-06-16: ?? packages/server-core/src/stock/StockStorageService??? Bun ?? bun:sqlite ??? stock_symbols?watchlist_items?research_runs?research_steps?research_reports ????",
-        "2026-06-16: bun test packages/server-core/src/stock/stock-storage.test.ts ??????????????Watchlist ??/??/???research run ?? pending steps?????/??/???",
-        "2026-06-16: stockResearch:createRun ????? runId ?????? Craft session id ? research run?",
-        "2026-06-16: ?? stockResearch:addWatchlistItem/listWatchlistItems/removeWatchlistItem/saveReport/listReports/getReport RPC?renderer ??? ElectronAPI/channel-map ???????? SQLite?",
-        "2026-06-16: focused tests ???bun test packages/server-core/src/stock/stock-storage.test.ts packages/server-core/src/handlers/rpc/stock-research.test.ts packages/shared/src/protocol/__tests__/routing.test.ts apps/electron/src/shared/__tests__/ipc-channels.test.ts apps/electron/src/main/handlers/__tests__/registration.test.ts apps/electron/src/main/handlers/__tests__/registration-profiles.test.ts?",
-        "2026-06-16: typecheck ???bun run typecheck:shared?cd packages/server-core && bun run typecheck?cd apps/electron && bun run typecheck?",
-        "2026-06-16: powershell -NoProfile -ExecutionPolicy Bypass -File .\\init.ps1 ???"
+        "2026-06-16: 已新增 packages/server-core/src/stock/StockStorageService，使用 Bun 内置 bun:sqlite 初始化 stock_symbols、watchlist_items、research_runs、research_steps、research_reports 五张表。",
+        "2026-06-16: bun test packages/server-core/src/stock/stock-storage.test.ts 通过，覆盖空库 schema 初始化、Watchlist 新增/查询/删除、research run 五个 pending steps、报告保存/列表/详情。",
+        "2026-06-16: stockResearch:createRun 已返回 runId，并持久化关联 Craft session id 的 research run。",
+        "2026-06-16: 已新增 stockResearch:addWatchlistItem/listWatchlistItems/removeWatchlistItem/saveReport/listReports/getReport RPC；renderer 仅通过 ElectronAPI/channel-map 调用，不直接访问 SQLite。",
+        "2026-06-16: focused tests 通过：bun test packages/server-core/src/stock/stock-storage.test.ts packages/server-core/src/handlers/rpc/stock-research.test.ts packages/shared/src/protocol/__tests__/routing.test.ts apps/electron/src/shared/__tests__/ipc-channels.test.ts apps/electron/src/main/handlers/__tests__/registration.test.ts apps/electron/src/main/handlers/__tests__/registration-profiles.test.ts。",
+        "2026-06-16: typecheck 通过：bun run typecheck:shared；cd packages/server-core && bun run typecheck；cd apps/electron && bun run typecheck。",
+        "2026-06-16: powershell -NoProfile -ExecutionPolicy Bypass -File .\\init.ps1 通过。"
       ],
-      "notes": "?????? Bun ?? bun:sqlite???? better-sqlite3??????? better-sqlite3 ????? binding ??????SQLite ???? Electron/headless server ??? server-core handler???? ~/.craft-agent/stockcraft.sqlite??? Reports/Watchlist UI ?????? RPC?"
+      "notes": "当前实现使用 Bun 内置 bun:sqlite，而不是原计划的 better-sqlite3；原因是 better-sqlite3 在本机安装超时且原生 binding 探针失败。SQLite 由 Electron/headless server 注入 server-core handler，默认路径为 ~/.craft-agent/stockcraft.sqlite。Reports/Watchlist UI 后续复用已新增 RPC。"
     },
     {
       "id": "stock-003",

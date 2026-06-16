@@ -3,10 +3,10 @@
 ## 当前已验证状态
 
 - 仓库根目录：`C:\craft_agents`
-- 当前目录状态：已初始化为 git 仓库，当前分支 `stock-001-research-run`，remote `origin` 指向 `https://github.com/fuweiwe1/TradingAgents.git`。
+- 当前目录状态：已初始化为 git 仓库，当前分支 `codex/stock-002-sqlite-storage`，remote `origin` 指向 `https://github.com/fuweiwe1/TradingAgents.git`。
 - 标准启动路径：Unix/Git Bash 使用 `bash ./init.sh`；Windows 无 Bash 时使用 `powershell -ExecutionPolicy Bypass -File .\init.ps1`。
 - 标准验证路径：`powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1`、`bun install --frozen-lockfile`、`bun run typecheck:shared`。
-- 当前最高优先级未完成功能：`stock-002`，实现股票模块本地 SQLite 存储。
+- 当前最高优先级未完成功能：`stock-003`，实现独立报告中心。
 - 当前工作流基线：`setup-001`、`spec-001`、`infra-001` 已通过；Craft Agents OSS 基线与 Bun 依赖验证可恢复。
 - 当前 blocker：
   - 当前环境的 `bash ./init.sh` 仍会进入损坏的 WSL，失败原因是 `/bin/bash` 不存在；Windows 当前使用 `init.ps1` 作为标准入口。
@@ -286,4 +286,24 @@
   - Full local `validate:ci` cannot be completed on this Windows machine until `python3`/`uv` are available. GitHub Actions installs uv and runs on Ubuntu, so this is expected to differ from local.
   - Current branch is `codex/stock-002-sqlite-storage`; CI fix is currently layered on top of the stock-002 branch unless split/cherry-picked before pushing.
 - Next step:
-  - Run final repo checks, commit the CI baseline fix, then push or apply the commit to the GitHub PR branch that needs the green check.
+  - Run final repo checks, commit the stock-002 progress-record cleanup, then push `codex/stock-002-sqlite-storage` and open a PR.
+
+### Session 011
+
+- 日期：2026-06-16
+- 本轮目标：PR #1 合并到 main 后，继续整理 `stock-002` 分支并准备发布。
+- 已完成：
+  - 按开工流程确认当前目录为 `C:\craft_agents`，读取 `claude-progress.md` 与 `feature_list.json`，查看最近提交，并运行 Windows 标准入口 `powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1`。
+  - 切换到 `codex/stock-002-sqlite-storage` 分支。
+  - 确认该分支包含 `f0b1df4 实现股票模块 SQLite 存储` 与 `80c0bbd 修复 GitHub validate 基线`。
+  - 复查 `stock-002` 存储实现：`StockStorageService` 使用 Bun 内置 `bun:sqlite`，由 Electron/headless server 注入 server-core handler；renderer 仅通过 RPC/ElectronAPI 调用，不直接访问 SQLite。
+  - 修复 `feature_list.json` 中 `stock-002` evidence/notes 的乱码文本，并明确记录当前实现采用 `bun:sqlite` 而非 `better-sqlite3` 的原因。
+- 验证记录：
+  - `powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1`：通过。
+  - `bun test packages/server-core/src/stock/stock-storage.test.ts packages/server-core/src/handlers/rpc/stock-research.test.ts apps/electron/src/renderer/stock-research/__tests__/start-stock-research.test.ts apps/electron/src/shared/__tests__/ipc-channels.test.ts`：通过，15 tests，0 fail。
+  - `bun run typecheck:shared`：通过。
+  - `cd packages/server-core && bun run typecheck`：通过。
+  - `cd apps/electron && bun run typecheck`：通过。
+- 当前进度：
+  - `stock-002` 已在功能清单中保持 `passing`；本轮只修正持久化证据文字。
+  - 下一步应做收尾验证、提交记录修正，然后推送 `codex/stock-002-sqlite-storage` 并创建 PR。
