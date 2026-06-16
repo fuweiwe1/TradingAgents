@@ -126,3 +126,32 @@
 - 当前进度：
   - `infra-001` 已标记为 `passing`。
   - 下一步执行 `stock-001`：先定位 Craft Agents 现有 LLM connection 默认模型读取路径和 session 创建路径，再设计单股研究 run 的最小实现。
+
+### Session 005
+
+- 日期：2026-06-16
+- 本轮目标：推进 `stock-001` 的首个后端切片。
+- 已完成：
+  - 创建并切换到分支 `stock-001-research-run`。
+  - 创建 `docs/superpowers/plans/2026-06-16-stock-001-single-stock-research.md`。
+  - 定位默认 LLM 连接路径：`SessionManager.createSession` / `getOrCreateAgent` 会通过 `resolveSessionConnection` 读取 session、workspace、global 默认连接；StockCraft v1 handler 不传 `model` 或 `llmConnection`，从而复用现有默认模型。
+  - 新增 `packages/shared/src/stock`：股票代码识别、研究步骤定义、五步研究初始提示词。
+  - 新增 `stockResearch:createRun` RPC：创建一个 Craft session 并发送五步研究提示。
+  - 将新 RPC 纳入 routing 分类、core handler 注册和注册覆盖测试。
+  - 修正 `settings.HANDLED_CHANNELS` 漏声明已实际注册的 `rtk:*` channel，使注册覆盖测试与实际注册行为一致。
+- TDD 记录：
+  - `symbols.test.ts` 先因 `../symbols` 缺失失败，再实现 parser 后通过。
+  - `research-run.test.ts` 先因 `../research-run` 缺失失败，再实现提示词 helper 后通过。
+  - `stock-research.test.ts` 先因 `./stock-research` 缺失失败，再实现 RPC handler 后通过。
+- 运行过的验证：
+  - `bun test packages/shared/src/stock/__tests__/symbols.test.ts packages/shared/src/stock/__tests__/research-run.test.ts packages/server-core/src/handlers/rpc/stock-research.test.ts`：通过，9 tests。
+  - `bun test packages/shared/src/protocol/__tests__/routing.test.ts apps/electron/src/main/handlers/__tests__/registration.test.ts apps/electron/src/main/handlers/__tests__/registration-profiles.test.ts`：通过，12 tests。
+  - `bun run typecheck:shared`：通过。
+  - `cd packages/server-core && bun run typecheck`：通过。
+  - 收尾复验：`powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1` 通过。
+  - 收尾复验：`python -m json.tool feature_list.json` 通过。
+  - 收尾复验：上述 9 个 focused tests、12 个 routing/registration tests、`bun run typecheck:shared`、`cd packages/server-core && bun run typecheck` 均重新通过。
+  - `bun run typecheck:all`：失败，当前基线问题包括缺少 `C:/craft_agents/tsconfig.base.json`、`@types/cacheable-request`/`keyv` 类型不匹配、`session-tools-core` target/downlevel 类型问题；本轮不扩大范围修复。
+- 当前进度：
+  - `stock-001` 保持 `in_progress`：后端创建研究会话入口已完成，UI 工作台、步骤状态展示和报告持久化仍未完成。
+  - 本地提交已完成；推送 `origin/stock-001-research-run` 失败，原因是无法连接 `github.com:443`，下一轮网络恢复后可重试 `git push -u origin stock-001-research-run`。
