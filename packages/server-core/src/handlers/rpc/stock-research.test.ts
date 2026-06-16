@@ -34,28 +34,50 @@ function createHarness() {
 }
 
 describe('stock research RPC handlers', () => {
-  test('creates one Craft session and sends the five-step prompt', async () => {
-    const { createRun, calls } = createHarness()
-    const result = await createRun({ clientId: 'client-1', workspaceId: 'workspace-1', webContentsId: null }, 'workspace-1', { symbol: 'AAPL' })
+  const acceptedSymbols = [
+    {
+      input: '600519',
+      expectedSymbol: { displaySymbol: '600519.SH', market: 'CN' },
+      expectedSessionName: 'Stock Research: 600519.SH',
+    },
+    {
+      input: '00700.HK',
+      expectedSymbol: { displaySymbol: '00700.HK', market: 'HK' },
+      expectedSessionName: 'Stock Research: 00700.HK',
+    },
+    {
+      input: 'AAPL',
+      expectedSymbol: { displaySymbol: 'AAPL', market: 'US' },
+      expectedSessionName: 'Stock Research: AAPL',
+    },
+  ] as const
 
-    expect(result).toMatchObject({
-      sessionId: 'session-1',
-      symbol: { displaySymbol: 'AAPL', market: 'US' },
-      steps: [
-        { key: 'data_collection' },
-        { key: 'analyst_views' },
-        { key: 'bull_bear_debate' },
-        { key: 'risk_review' },
-        { key: 'report_generation' },
-      ],
+  for (const { input, expectedSymbol, expectedSessionName } of acceptedSymbols) {
+    test(`creates one Craft session and sends the five-step prompt for ${input}`, async () => {
+      const { createRun, calls } = createHarness()
+      const result = await createRun({ clientId: 'client-1', workspaceId: 'workspace-1', webContentsId: null }, 'workspace-1', { symbol: input })
+
+      expect(result).toMatchObject({
+        sessionId: 'session-1',
+        symbol: expectedSymbol,
+        steps: [
+          { key: 'data_collection' },
+          { key: 'analyst_views' },
+          { key: 'bull_bear_debate' },
+          { key: 'risk_review' },
+          { key: 'report_generation' },
+        ],
+      })
+      expect(calls[0]).toEqual({
+        method: 'createSession',
+        args: ['workspace-1', { name: expectedSessionName }],
+      })
+      expect(calls[1]?.method).toBe('sendMessage')
+      expect(calls[1]?.args[0]).toBe('session-1')
+      expect(String(calls[1]?.args[1])).toContain(expectedSymbol.displaySymbol)
+      expect(String(calls[1]?.args[1])).toContain('报告生成')
     })
-    expect(calls[0]).toEqual({
-      method: 'createSession',
-      args: ['workspace-1', { name: 'Stock Research: AAPL' }],
-    })
-    expect(calls[1]?.method).toBe('sendMessage')
-    expect(String(calls[1]?.args[1])).toContain('报告生成')
-  })
+  }
 
   test('rejects invalid stock symbols before creating a session', async () => {
     const { createRun, calls } = createHarness()
