@@ -1,6 +1,6 @@
 {
   "project": "StockCraft",
-  "last_updated": "2026-06-15",
+  "last_updated": "2026-06-16",
   "rules": {
     "single_active_feature": true,
     "passing_requires_evidence": true,
@@ -43,15 +43,18 @@
       "area": "spec",
       "title": "完善 StockCraft 产品与技术 Spec",
       "user_visible_behavior": "项目拥有一份明确的 v1 Spec，描述股票研究工作台、五步研究流、LLM 复用策略、本地 SQLite、Source 模板、Watchlist 和 Reports。",
-      "status": "not_started",
+      "status": "passing",
       "verification": [
         "Spec 明确 v1 范围和 out-of-scope。",
         "Spec 明确复用 Craft Agents 现有 LLM connection 系统，只新增单连接默认模型策略。",
         "Spec 明确 SQLite 存储边界和 renderer/main 访问边界。",
         "Spec 明确五步研究流与单 Craft session 的关系。"
       ],
-      "evidence": [],
-      "notes": "聊天中已有初稿，需要落盘到 docs 目录并做自检。"
+      "evidence": [
+        "2026-06-16: 已创建 docs/specs/stockcraft-v1-spec.md。",
+        "2026-06-16: rg 检查命中 Out of Scope、单连接默认模型、renderer 不直接访问 SQLite、每一次单股研究对应一个 Craft session、五步研究流。"
+      ],
+      "notes": "v1 Spec 已落盘，后续实现以 docs/specs/stockcraft-v1-spec.md 为准。"
     },
     {
       "id": "infra-001",

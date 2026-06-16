@@ -6,7 +6,7 @@
 - 当前目录状态：已初始化为 git 仓库，当前分支 `main`，remote `origin` 指向 `https://github.com/fuweiwe1/TradingAgents.git`。
 - 标准启动路径：Unix/Git Bash 使用 `bash ./init.sh`；Windows 无 Bash 时使用 `powershell -ExecutionPolicy Bypass -File .\init.ps1`。
 - 标准验证路径：当前只做约束文件与环境检查；正式项目代码拉取后需要更新为真实构建/测试命令。
-- 当前最高优先级未完成功能：`spec-001`，完善 StockCraft 产品与技术 Spec。
+- 当前最高优先级未完成功能：`infra-001`，准备 Craft Agents OSS 本地工作区。
 - 当前工作流基线：`setup-001` 已通过；约束文件已补齐并完成 JSON/存在性/Windows 启动入口校验。
 - 当前 blocker：
   - 当前仓库尚未放入 Craft Agents OSS 项目代码，未检测到 `package.json`，暂不能执行项目级构建或测试。
@@ -72,3 +72,16 @@
 - 当前结论：
   - git/GitHub 基础状态已就绪。
   - 正式实现前仍需要把 StockCraft Spec 落盘，并准备 Craft Agents OSS 代码基线或明确采用空仓库逐步迁入。
+
+### Session 003
+
+- 日期：2026-06-16
+- 本轮目标：完成正式开工前两件事：落盘 StockCraft Spec，接入 Craft Agents OSS 代码基线。
+- 已完成：
+  - 创建 `docs/specs/stockcraft-v1-spec.md`。
+  - Spec 明确 v1 范围、out-of-scope、分层架构、单连接默认模型、SQLite 边界、五步研究流与 Craft session 的关系。
+- 运行过的验证：
+  - `rg -n "Out of Scope|单连接默认模型|renderer 不直接访问 SQLite|每一次单股研究对应一个 Craft session|五步研究流" docs\specs\stockcraft-v1-spec.md`：通过，关键验收点均命中。
+- 当前进度：
+  - `spec-001` 已标记为 `passing`。
+  - 下一步执行 `infra-001`：接入 Craft Agents OSS 上游代码基线。
