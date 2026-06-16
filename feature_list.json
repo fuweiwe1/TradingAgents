@@ -85,9 +85,10 @@
         "2026-06-16: bun install --frozen-lockfile 通过。",
         "2026-06-16: bun run typecheck:shared 通过。",
         "2026-06-16: init.ps1 已更新为自动识别 $HOME\\.bun\\bin\\bun.exe，避免新 PowerShell 尚未刷新 PATH 时误报缺少 Bun。",
-        "2026-06-16: bash ./init.sh 在当前 Windows/WSL 环境仍失败，原因是 /bin/bash 不存在；当前平台使用 init.ps1。"
+        "2026-06-16: bash ./init.sh 在当前 Windows/WSL 环境仍失败，原因是 /bin/bash 不存在；当前平台使用 init.ps1。",
+        "2026-06-16: 修复 GitHub validate 基线：补回 tsconfig.base.json、修正 pi-agent-server strict typecheck、补齐 lint:i18n:coverage 脚本并排序 locale；bun run typecheck:all、bun run test:shared:all、lint:i18n:parity/sorted/coverage 均通过。"
       ],
-      "notes": "Craft Agents OSS 代码基线、Bun 依赖安装和 shared typecheck 已通过；当前 Windows 环境标准入口使用 init.ps1。"
+      "notes": "Craft Agents OSS 代码基线、Bun 依赖安装、shared typecheck 和 GitHub validate 的 typecheck/i18n 基线已通过；当前 Windows 环境标准入口使用 init.ps1。本机 validate:ci 仍无法完整跑完 doc-tools，原因是当前 Windows 缺少 python3/uv；GitHub workflow 会安装 uv。"
     },
     {
       "id": "stock-001",

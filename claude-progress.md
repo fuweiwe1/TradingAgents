@@ -255,3 +255,35 @@
 - 当前进度：
   - `stock-002` 已标记为 `passing`：空数据库 schema、Watchlist 增删查、报告保存/列表/详情、renderer 不直连 SQLite 均有自动化或架构证据。
   - 下一步最高优先级功能为 `stock-003`：实现独立 Reports 中心。
+
+### Session 010
+
+- Date: 2026-06-16
+- Goal: Fix the GitHub Actions `validate` baseline failure shown in PR/run screenshots.
+- Root cause:
+  - `packages/session-tools-core/tsconfig.json` and `packages/pi-agent-server/tsconfig*.json` extended missing `../../tsconfig.base.json`.
+  - Without that shared base config, TypeScript fell back to an old target and produced the GitHub errors for missing `tsconfig.base.json`, `Set` iteration/downleveling, Unicode regex flags, and third-party `.d.ts` files.
+  - After restoring the base config, `packages/pi-agent-server` exposed three real strict nullability/indexing errors.
+  - Later CI i18n steps also had baseline issues: locale files were unsorted, and `lint:i18n:coverage` referenced a missing script.
+- Done:
+  - Added root `tsconfig.base.json` with shared strict ESNext/bundler compiler options.
+  - Fixed `packages/pi-agent-server` indexed access/nullability issues in prefetch logging, DuckDuckGo redirect extraction, and web-fetch content-type parsing.
+  - Added `scripts/check-i18n-coverage.ts` for static `t(...)`, `i18n.t(...)`, and `<Trans i18nKey>` key coverage against `en.json`, including plural base-key handling.
+  - Ran `bun run sort-locales`, sorting all locale JSON files.
+  - Updated `feature_list.json` with infra evidence and current validation limits.
+- Verification:
+  - `powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1`: passed.
+  - `cmd /c "cd /d C:\craft_agents\packages\session-tools-core && bun run tsc --noEmit"`: passed.
+  - `cmd /c "cd /d C:\craft_agents\packages\pi-agent-server && bun run typecheck"`: passed.
+  - `bun run typecheck:all`: passed.
+  - `bun run test:shared:all`: passed as part of `validate:ci` before doc-tools.
+  - `bun run lint:i18n:parity`: passed.
+  - `bun run lint:i18n:sorted`: passed.
+  - `bun run lint:i18n:coverage`: passed, 1077 static keys checked.
+  - `bun run validate:ci`: advanced past the original GitHub typecheck failure and shared tests, then stopped locally at `test:doc-tools` because this Windows environment has no `python3` command.
+  - `python -m unittest ...doc tool smoke...`: stopped locally because no bundled `uv.exe` exists at `apps/electron/resources/bin/win32-x64/uv.exe` and `uv` is not on PATH.
+- Remaining risk/blocker:
+  - Full local `validate:ci` cannot be completed on this Windows machine until `python3`/`uv` are available. GitHub Actions installs uv and runs on Ubuntu, so this is expected to differ from local.
+  - Current branch is `codex/stock-002-sqlite-storage`; CI fix is currently layered on top of the stock-002 branch unless split/cherry-picked before pushing.
+- Next step:
+  - Run final repo checks, commit the CI baseline fix, then push or apply the commit to the GitHub PR branch that needs the green check.
