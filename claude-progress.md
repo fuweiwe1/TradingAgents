@@ -179,3 +179,21 @@
   - `git diff --check`：通过，仅有 Windows LF/CRLF 提醒。
 - 当前进度：
   - `stock-001` 继续保持 `in_progress`：用户现在可以从 UI 发起股票研究并进入关联 Craft session；步骤状态展示和报告持久化仍未完成。
+
+### Session 007
+
+- 日期：2026-06-16
+- 本轮目标：继续 `stock-001`，在股票研究会话内展示五步研究状态。
+- 已完成：
+  - 创建 `docs/superpowers/plans/2026-06-16-stock-001-step-status-panel.md`。
+  - 新增 `apps/electron/src/renderer/stock-research/step-status.ts`：识别 `Stock Research: ...` 会话，并从 assistant/plan 消息标题推导五步状态。
+  - 新增 `StockResearchStepPanel`：在股票研究会话顶部展示数据收集、分析师观点、牛熊辩论、风险审查、报告生成五步状态。
+  - 将步骤面板接入 `ChatPage`，只在已加载的 Stock Research 会话中显示。
+- TDD 记录：
+  - `step-status.test.ts` 先因 `../step-status` 缺失失败，再实现 helper 后通过。
+- 运行过的验证：
+  - `powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1`：通过。
+  - `bun test apps/electron/src/renderer/stock-research/__tests__/step-status.test.ts apps/electron/src/renderer/stock-research/__tests__/start-stock-research.test.ts apps/electron/src/shared/__tests__/ipc-channels.test.ts`：通过，11 tests。
+  - `cd apps/electron && bun run typecheck`：通过。
+- 当前进度：
+  - `stock-001` 继续保持 `in_progress`：后端入口、UI 发起入口和会话内五步状态展示已完成；报告持久化仍未完成，需等待 `stock-002` SQLite 边界。
