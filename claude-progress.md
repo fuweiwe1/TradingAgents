@@ -218,3 +218,26 @@
   - `stock-001` 已达到当前功能清单的完成定义：A股、港股、美股输入均有自动化验收证据，研究 run 关联一个 Craft session，UI 可发起并展示五步状态。
   - 下一步最高优先级功能为 `stock-002`：实现股票模块本地 SQLite 存储。
   - 已知环境 blocker 仍为：当前 Windows/WSL 环境运行 `bash ./init.sh` 会因 `/bin/bash` 不存在失败；当前平台继续使用 `init.ps1`。
+
+### Session 009
+
+- Date: 2026-06-16
+- Goal: Apply the GitHub Actions `validate` baseline fix to PR #1 (`stock-001-research-run`) without mixing in stock-002 work.
+- Root cause:
+  - `packages/session-tools-core/tsconfig.json` and `packages/pi-agent-server/tsconfig*.json` extended missing `../../tsconfig.base.json`.
+  - Without that shared base config, TypeScript fell back to an old target and produced the GitHub errors for missing `tsconfig.base.json`, `Set` iteration/downleveling, Unicode regex flags, and third-party `.d.ts` files.
+  - After restoring the base config, `packages/pi-agent-server` exposed three real strict nullability/indexing errors.
+  - Later CI i18n steps also had baseline issues: locale files were unsorted, and `lint:i18n:coverage` referenced a missing script.
+- Done:
+  - Cherry-picked the CI baseline fix onto `stock-001-research-run`.
+  - Added root `tsconfig.base.json` with shared strict ESNext/bundler compiler options.
+  - Fixed `packages/pi-agent-server` indexed access/nullability issues in prefetch logging, DuckDuckGo redirect extraction, and web-fetch content-type parsing.
+  - Added `scripts/check-i18n-coverage.ts` for static `t(...)`, `i18n.t(...)`, and `<Trans i18nKey>` key coverage against `en.json`, including plural base-key handling.
+  - Updated `feature_list.json` with infra evidence and current validation limits.
+- Verification:
+  - `powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1`: passed before cherry-pick.
+  - Full post-cherry-pick verification is required before push.
+- Remaining risk/blocker:
+  - Full local `validate:ci` cannot be completed on this Windows machine until `python3`/`uv` are available. GitHub Actions installs uv and runs on Ubuntu, so this is expected to differ from local.
+- Next step:
+  - Finish cherry-pick, run final checks, and push `stock-001-research-run` to update PR #1.
