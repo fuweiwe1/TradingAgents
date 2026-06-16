@@ -258,35 +258,33 @@
 
 ### Session 010
 
-- Date: 2026-06-16
-- Goal: Fix the GitHub Actions `validate` baseline failure shown in PR/run screenshots.
-- Root cause:
-  - `packages/session-tools-core/tsconfig.json` and `packages/pi-agent-server/tsconfig*.json` extended missing `../../tsconfig.base.json`.
-  - Without that shared base config, TypeScript fell back to an old target and produced the GitHub errors for missing `tsconfig.base.json`, `Set` iteration/downleveling, Unicode regex flags, and third-party `.d.ts` files.
-  - After restoring the base config, `packages/pi-agent-server` exposed three real strict nullability/indexing errors.
-  - Later CI i18n steps also had baseline issues: locale files were unsorted, and `lint:i18n:coverage` referenced a missing script.
-- Done:
-  - Added root `tsconfig.base.json` with shared strict ESNext/bundler compiler options.
-  - Fixed `packages/pi-agent-server` indexed access/nullability issues in prefetch logging, DuckDuckGo redirect extraction, and web-fetch content-type parsing.
-  - Added `scripts/check-i18n-coverage.ts` for static `t(...)`, `i18n.t(...)`, and `<Trans i18nKey>` key coverage against `en.json`, including plural base-key handling.
-  - Ran `bun run sort-locales`, sorting all locale JSON files.
-  - Updated `feature_list.json` with infra evidence and current validation limits.
-- Verification:
-  - `powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1`: passed.
-  - `cmd /c "cd /d C:\craft_agents\packages\session-tools-core && bun run tsc --noEmit"`: passed.
-  - `cmd /c "cd /d C:\craft_agents\packages\pi-agent-server && bun run typecheck"`: passed.
-  - `bun run typecheck:all`: passed.
-  - `bun run test:shared:all`: passed as part of `validate:ci` before doc-tools.
-  - `bun run lint:i18n:parity`: passed.
-  - `bun run lint:i18n:sorted`: passed.
-  - `bun run lint:i18n:coverage`: passed, 1077 static keys checked.
-  - `bun run validate:ci`: advanced past the original GitHub typecheck failure and shared tests, then stopped locally at `test:doc-tools` because this Windows environment has no `python3` command.
-  - `python -m unittest ...doc tool smoke...`: stopped locally because no bundled `uv.exe` exists at `apps/electron/resources/bin/win32-x64/uv.exe` and `uv` is not on PATH.
-- Remaining risk/blocker:
-  - Full local `validate:ci` cannot be completed on this Windows machine until `python3`/`uv` are available. GitHub Actions installs uv and runs on Ubuntu, so this is expected to differ from local.
-  - Current branch is `codex/stock-002-sqlite-storage`; CI fix is currently layered on top of the stock-002 branch unless split/cherry-picked before pushing.
-- Next step:
-  - Run final repo checks, commit the stock-002 progress-record cleanup, then push `codex/stock-002-sqlite-storage` and open a PR.
+- 日期：2026-06-16
+- 本轮目标：修复 GitHub Actions `validate` 基线失败，并将该修复应用到 PR #1。
+- 根因：
+  - `packages/session-tools-core/tsconfig.json` 和 `packages/pi-agent-server/tsconfig*.json` 继承了缺失的 `../../tsconfig.base.json`。
+  - 缺少共享 base config 后，TypeScript 退回旧 target，触发 GitHub 日志里的 `tsconfig.base.json` 缺失、`Set` 迭代、Unicode regex flag、第三方 `.d.ts` 等错误。
+  - 补回 base config 后，`packages/pi-agent-server` 暴露出 3 个真实 strict nullability/indexing 错误。
+  - 后续 CI i18n 步骤还有基线问题：locale 文件未排序，且 `lint:i18n:coverage` 引用了缺失脚本。
+- 已完成：
+  - 在 `stock-001-research-run` 上 cherry-pick CI baseline fix 并推送，PR #1 的 Validate 后续通过。
+  - 新增根 `tsconfig.base.json`，包含共享 strict ESNext/bundler 编译选项。
+  - 修复 `packages/pi-agent-server` 在 prefetch logging、DuckDuckGo redirect extraction、web-fetch content-type parsing 中的索引/可空类型问题。
+  - 新增 `scripts/check-i18n-coverage.ts`，静态检查 `t(...)`、`i18n.t(...)`、`<Trans i18nKey>` key 是否存在于 `en.json`，并处理 plural base-key。
+  - 运行 `bun run sort-locales` 排序所有 locale JSON。
+  - 更新 `feature_list.json`，记录 infra 证据和本机 validate 限制。
+- 验证：
+  - `powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1`：通过。
+  - `cmd /c "cd /d C:\craft_agents\packages\session-tools-core && bun run tsc --noEmit"`：通过。
+  - `cmd /c "cd /d C:\craft_agents\packages\pi-agent-server && bun run typecheck"`：通过。
+  - `bun run typecheck:all`：通过。
+  - `bun run test:shared:all`：在 `validate:ci` 进入 doc-tools 前通过。
+  - `bun run lint:i18n:parity`：通过。
+  - `bun run lint:i18n:sorted`：通过。
+  - `bun run lint:i18n:coverage`：通过，检查 1077 个静态 key。
+  - `bun run validate:ci`：已越过原始 GitHub typecheck 失败和 shared tests，本机停在 `test:doc-tools`，原因是 Windows 环境没有 `python3` 命令。
+  - `python -m unittest ...doc tool smoke...`：本机停止，原因是 `apps/electron/resources/bin/win32-x64/uv.exe` 不存在且 `uv` 不在 PATH。
+- 剩余风险/blocker：
+  - 当前 Windows 机器缺少 `python3`/`uv`，无法完整本地跑完 `validate:ci`；GitHub Actions 在 Ubuntu 上会安装 uv。
 
 ### Session 011
 
@@ -306,4 +304,16 @@
   - `cd apps/electron && bun run typecheck`：通过。
 - 当前进度：
   - `stock-002` 已在功能清单中保持 `passing`；本轮只修正持久化证据文字。
-  - 下一步应做收尾验证、提交记录修正，然后推送 `codex/stock-002-sqlite-storage` 并创建 PR。
+  - 已创建 PR #2：`https://github.com/fuweiwe1/TradingAgents/pull/2`，当前为 Draft。
+
+### Session 012
+
+- 日期：2026-06-16
+- 本轮目标：继续 PR #2 发布流程，去除重复 CI baseline 差异。
+- 已完成：
+  - 发现 PR #2 diff 中仍包含 `tsconfig.base.json`、`scripts/check-i18n-coverage.ts` 和 `packages/pi-agent-server` CI baseline 文件；这些内容已通过 PR #1 合进 main，不应作为 `stock-002` 的新增差异。
+  - 尝试 `git fetch origin main` 失败，原因是当前网络连接 GitHub 443 超时。
+  - 改用本地已存在的 `stock-001-research-run` 分支执行 `git merge stock-001-research-run --no-edit`，使 `codex/stock-002-sqlite-storage` 包含 main 已有的 CI baseline ancestor，避免 PR diff 重复显示该修复。
+  - 合并仅在 `claude-progress.md` 产生冲突；已保留 `stock-002` 记录、CI baseline 记录和 PR #2 发布记录。
+- 下一步：
+  - 完成 merge commit，跑 focused tests/typecheck，推送更新 PR #2。
