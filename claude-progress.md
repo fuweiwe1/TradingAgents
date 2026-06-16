@@ -5,11 +5,11 @@
 - 仓库根目录：`C:\craft_agents`
 - 当前目录状态：已初始化为 git 仓库，当前分支 `main`，remote `origin` 指向 `https://github.com/fuweiwe1/TradingAgents.git`。
 - 标准启动路径：Unix/Git Bash 使用 `bash ./init.sh`；Windows 无 Bash 时使用 `powershell -ExecutionPolicy Bypass -File .\init.ps1`。
-- 标准验证路径：当前只做约束文件与环境检查；正式项目代码拉取后需要更新为真实构建/测试命令。
-- 当前最高优先级未完成功能：`infra-001`，准备 Craft Agents OSS 本地工作区。
-- 当前工作流基线：`setup-001` 已通过；约束文件已补齐并完成 JSON/存在性/Windows 启动入口校验。
+- 标准验证路径：`powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1`、`bun install --frozen-lockfile`、`bun run typecheck:shared`。
+- 当前最高优先级未完成功能：`stock-001`，实现单股研究五步流。
+- 当前工作流基线：`setup-001`、`spec-001`、`infra-001` 已通过；Craft Agents OSS 基线与 Bun 依赖验证可恢复。
 - 当前 blocker：
-  - 当前仓库尚未放入 Craft Agents OSS 项目代码，未检测到 `package.json`，暂不能执行项目级构建或测试。
+  - 当前环境的 `bash ./init.sh` 仍会进入损坏的 WSL，失败原因是 `/bin/bash` 不存在；Windows 当前使用 `init.ps1` 作为标准入口。
   - 需要确认 remote 仓库名 `TradingAgents` 是否为本项目最终命名，还是临时名称。
 
 ## 会话记录
@@ -85,3 +85,42 @@
 - 当前进度：
   - `spec-001` 已标记为 `passing`。
   - 下一步执行 `infra-001`：接入 Craft Agents OSS 上游代码基线。
+
+#### Session 003 续：Craft Agents OSS 基线
+
+- 已完成：
+  - 添加 `upstream` remote：`https://github.com/craft-ai-agents/craft-agents-oss.git`。
+  - 拉取 `upstream/main`，最新上游提交为 `a512da7 v0.10.3`。
+  - 使用 `git merge upstream/main --allow-unrelated-histories --no-edit` 合入 Craft Agents OSS 代码基线。
+  - 确认仓库已有 `package.json`、`bun.lock`、`apps/`、`packages/`。
+  - 将 `upstream` push URL 设置为 `DISABLED`，避免误推上游。
+  - 更新 `init.ps1` / `init.sh`：检测到 `bun.lock` 时要求 Bun，不再建议 npm fallback。
+- 运行过的验证：
+  - `git status --short`：合入后干净；后续仅 `init.ps1`、`init.sh` 和状态文件有记录性修改。
+  - `powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1`：通过约束检查，并正确提示 `bun.lock detected, but Bun is not installed; cannot run project-level verification`。
+  - `Test-Path package.json/bun.lock/apps/packages`：均为 `True`。
+  - `git remote -v`：`origin` 指向用户仓库，`upstream` fetch 指向 Craft Agents OSS，push 为 `DISABLED`。
+- 当前 blocker：
+  - 本机未安装 Bun，无法运行 `bun install --frozen-lockfile`、`bun run typecheck:shared` 或测试。
+
+### Session 004
+
+- 日期：2026-06-16
+- 本轮目标：解除 `infra-001` 的 Bun blocker，完成 Craft Agents OSS 本地工作区基础验证。
+- 已完成：
+  - 安装 Bun `1.3.10` 到 `C:\Users\-\.bun\bin\bun.exe`，与仓库 CI 的 `.github/workflows/validate.yml` 配置一致。
+  - 发现 `bun install --frozen-lockfile` 初始失败，根因是 `bun.lock` 仍含已移除 workspace（`apps/marketing`、`packages/craft-cli`、`packages/craft-agents-commands`）和旧 workspace 版本 `0.10.2`。
+  - 使用官方 registry 临时覆盖重算 `bun.lock`，避免用户级 `.npmrc` 的腾讯镜像 URL 写入锁文件。
+  - 更新 `bun.lock`：workspace 版本对齐到 `0.10.3`，移除已不存在 workspace 及其遗留依赖。
+  - 完成依赖安装并跑通 shared typecheck。
+- 运行过的验证：
+  - `Get-Location`：确认当前目录为 `C:\craft_agents`。
+  - `git log --oneline -5`：通过，最近提交为 `9cd3de9 Merge remote-tracking branch 'upstream/main'`。
+  - `powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1`：通过，并提示可运行 `bun install --frozen-lockfile` 与 `bun run typecheck:shared`。
+  - `bash ./init.sh`：失败；WSL 报错 `execvpe(/bin/bash) failed: No such file or directory`，当前 Windows 环境继续使用 `init.ps1`。
+  - `bun --version`：`1.3.10`。
+  - `bun install --frozen-lockfile`：通过。
+  - `bun run typecheck:shared`：通过。
+- 当前进度：
+  - `infra-001` 已标记为 `passing`。
+  - 下一步执行 `stock-001`：先定位 Craft Agents 现有 LLM connection 默认模型读取路径和 session 创建路径，再设计单股研究 run 的最小实现。

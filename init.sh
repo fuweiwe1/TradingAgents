@@ -43,7 +43,14 @@ fi
 
 if [ -f "package.json" ]; then
   echo "==> 检测到 package.json"
-  if command -v bun >/dev/null 2>&1; then
+  if [ -f "bun.lock" ]; then
+    if command -v bun >/dev/null 2>&1; then
+      echo "可运行: bun install --frozen-lockfile"
+      echo "可运行: bun run typecheck:shared"
+    else
+      echo "检测到 bun.lock，但未找到 Bun，无法运行项目级验证"
+    fi
+  elif command -v bun >/dev/null 2>&1; then
     echo "可运行: bun install && bun test"
   elif command -v npm >/dev/null 2>&1; then
     echo "可运行: npm install && npm test"

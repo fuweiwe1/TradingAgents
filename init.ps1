@@ -35,7 +35,14 @@ if (Test-Path -LiteralPath ".git" -PathType Container) {
 
 if (Test-Path -LiteralPath "package.json" -PathType Leaf) {
   Write-Host "==> package.json detected"
-  if (Get-Command bun -ErrorAction SilentlyContinue) {
+  if (Test-Path -LiteralPath "bun.lock" -PathType Leaf) {
+    if (Get-Command bun -ErrorAction SilentlyContinue) {
+      Write-Host "Available command: bun install --frozen-lockfile"
+      Write-Host "Available command: bun run typecheck:shared"
+    } else {
+      Write-Host "bun.lock detected, but Bun is not installed; cannot run project-level verification"
+    }
+  } elseif (Get-Command bun -ErrorAction SilentlyContinue) {
     Write-Host "Available command: bun install && bun test"
   } elseif (Get-Command npm -ErrorAction SilentlyContinue) {
     Write-Host "Available command: npm install && npm test"
