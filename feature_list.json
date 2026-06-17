@@ -165,9 +165,10 @@
         "2026-06-17: 用户确认采用独立 Reports 页面方案：左侧 Reports 入口、中间报告列表与筛选、右侧报告详情，并复用 stock-002 已有 list/get report RPC。",
         "2026-06-17: 已创建 docs/superpowers/specs/2026-06-17-stock-003-reports-center-design.md，明确 renderer 本地筛选、按需加载详情、Open Session、Export MD、错误态和 TDD 验证范围。",
         "2026-06-17: 已创建 docs/superpowers/plans/2026-06-17-stock-003-reports-center.md，将实现拆为 DTO/sessionId、报告筛选与导出 helpers、Reports route、页面状态/actions、ReportsPage UI、最终验证记录六个 TDD 任务。",
-        "2026-06-17: Task 1 complete: StockResearchReport DTO now exposes sessionId; stock-storage report list/detail select research_runs.session_id and map it through. Red/green command: bun test packages/server-core/src/stock/stock-storage.test.ts."
+        "2026-06-17: Task 1 complete: StockResearchReport DTO now exposes sessionId; stock-storage report list/detail select research_runs.session_id and map it through. Red/green command: bun test packages/server-core/src/stock/stock-storage.test.ts.",
+        "2026-06-17: Task 2 complete: added renderer-local report filtering/sorting helpers and Markdown export/filename helpers under apps/electron/src/renderer/stock-reports. Red/green command: bun test apps/electron/src/renderer/stock-reports/__tests__/report-filtering.test.ts apps/electron/src/renderer/stock-reports/__tests__/report-export.test.ts."
       ],
-      "notes": "Task 1 DTO/sessionId slice complete. stock-003 remains in_progress; continue with the next task in docs/superpowers/plans/2026-06-17-stock-003-reports-center.md. Branch is temporarily based on codex/stock-002-sqlite-storage until PR #2 lands."
+      "notes": "Task 1 DTO/sessionId slice complete. Task 2 report filtering/export helper slice complete. stock-003 remains in_progress; continue with the next task in docs/superpowers/plans/2026-06-17-stock-003-reports-center.md. Branch is temporarily based on codex/stock-002-sqlite-storage until PR #2 lands."
     },
     {
       "id": "stock-004",

@@ -360,3 +360,19 @@
 - Current progress:
   - `stock-003` remains `in_progress`; Task 1 is complete and committed.
   - Next task should continue the Reports Center plan from `docs/superpowers/plans/2026-06-17-stock-003-reports-center.md`.
+
+### Session 015
+
+- Date: 2026-06-17
+- Goal: Execute StockCraft Reports Center Task 2, adding report filtering and export helpers.
+- Completed:
+  - Followed TDD: created helper tests before production modules existed.
+  - Confirmed the red test failed because `../report-filtering` and `../report-export` were missing.
+  - Added `filterStockReports` and `sortStockReportsNewestFirst` in `apps/electron/src/renderer/stock-reports/report-filtering.ts`.
+  - Added `formatStockReportMarkdown` and `buildStockReportFilename` in `apps/electron/src/renderer/stock-reports/report-export.ts`; the filename helper preserves display symbol casing while lower-casing the title slug.
+- Verification:
+  - `bun test apps/electron/src/renderer/stock-reports/__tests__/report-filtering.test.ts apps/electron/src/renderer/stock-reports/__tests__/report-export.test.ts`: red failed with missing module errors before implementation.
+  - `bun test apps/electron/src/renderer/stock-reports/__tests__/report-filtering.test.ts apps/electron/src/renderer/stock-reports/__tests__/report-export.test.ts`: green passed, 5 tests, 0 fail, 16 expectations.
+- Current progress:
+  - `stock-003` remains `in_progress`; Task 2 is complete.
+  - Next task should add the Reports route and navigation state from `docs/superpowers/plans/2026-06-17-stock-003-reports-center.md`.
