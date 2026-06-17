@@ -257,7 +257,18 @@ export default function ReportsPage({ workspaceId }: ReportsPageProps) {
             <div className="px-4 py-6 text-sm text-muted-foreground">Loading reports...</div>
           )}
           {workspaceId && listError && (
-            <div className="px-4 py-6 text-sm text-destructive">{listError}</div>
+            <div className="px-4 py-6">
+              <div className="text-sm text-destructive">{listError}</div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="mt-3"
+                onClick={handleRefresh}
+              >
+                Retry
+              </Button>
+            </div>
           )}
           {workspaceId && listEmpty && (
             <div className="px-4 py-6 text-sm text-muted-foreground">No stock research reports yet.</div>

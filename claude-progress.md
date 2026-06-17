@@ -490,3 +490,17 @@
 - Known risk/blocker:
   - `codex/stock-003-reports-center` is still temporarily based on `codex/stock-002-sqlite-storage` until PR #2 lands.
   - On this Windows machine, `bash ./init.sh` still enters the broken WSL path where `/bin/bash` is missing; the standard local startup path remains `init.ps1`.
+
+### Session 021
+
+- Date: 2026-06-17
+- Goal: Address final code review feedback for the Reports Center.
+- Completed:
+  - Verified the final reviewer finding: the report list load-error branch showed the error text but did not include the contextual Retry action required by the spec.
+  - Added a local Retry button to the list error state in `ReportsPage`, wired to the existing refresh flow.
+  - Updated `feature_list.json` with the review-fix evidence.
+- Verification:
+  - Focused suite passed again: `bun test packages/server-core/src/stock/stock-storage.test.ts packages/server-core/src/handlers/rpc/stock-research.test.ts apps/electron/src/shared/__tests__/route-parser-reports.test.ts apps/electron/src/shared/__tests__/route-parser-automations.test.ts apps/electron/src/renderer/stock-reports/__tests__/report-filtering.test.ts apps/electron/src/renderer/stock-reports/__tests__/report-export.test.ts apps/electron/src/renderer/stock-reports/__tests__/report-actions.test.ts apps/electron/src/renderer/stock-reports/__tests__/report-page-state.test.ts apps/electron/src/shared/__tests__/ipc-channels.test.ts apps/electron/src/renderer/lib/__tests__/nav-helpers.test.ts` passed with 43 tests, 0 failures, and 131 expectations.
+  - `cd apps/electron && bun run typecheck` passed.
+- Current progress:
+  - `stock-003` remains `passing`; awaiting final re-review and branch finishing.
