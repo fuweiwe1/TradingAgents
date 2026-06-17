@@ -342,3 +342,21 @@
 - 当前进度：
   - `stock-003` 设计与实现计划已落盘，尚未开始实现代码。
   - 下一步是按计划执行，推荐使用 subagent-driven development；若用户选择 inline，也可用 executing-plans 顺序执行。
+
+### Session 014
+
+- Date: 2026-06-17
+- Goal: Execute StockCraft Reports Center Task 1, adding `sessionId` to report DTOs.
+- Completed:
+  - Followed TDD: updated the existing `creates research runs with five pending steps and stores reports` test first.
+  - Confirmed the red test failed because `listResearchReports()` did not include `sessionId`.
+  - Added `sessionId: string` to `StockResearchReport`.
+  - Selected `research_runs.session_id` for report rows and mapped it through `mapResearchReportRow`.
+- Verification:
+  - `powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1`: passed.
+  - Baseline `bun test packages/server-core/src/stock/stock-storage.test.ts`: passed before edits.
+  - Red `bun test packages/server-core/src/stock/stock-storage.test.ts`: failed at the report list assertion because `sessionId` was missing.
+  - Green `bun test packages/server-core/src/stock/stock-storage.test.ts`: passed, 3 tests, 0 fail, 9 expectations.
+- Current progress:
+  - `stock-003` remains `in_progress`; Task 1 is complete and committed.
+  - Next task should continue the Reports Center plan from `docs/superpowers/plans/2026-06-17-stock-003-reports-center.md`.

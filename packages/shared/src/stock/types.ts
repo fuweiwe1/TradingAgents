@@ -85,6 +85,7 @@ export interface StockResearchStepRecord {
 export interface StockResearchReport {
   id: string
   runId: string
+  sessionId: string
   title: string
   symbol: ParsedStockSymbol
   rating: string | null

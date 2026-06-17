@@ -89,6 +89,7 @@ interface ResearchStepRow {
 interface ResearchReportRow extends SymbolRow {
   report_id: string
   run_id: string
+  session_id: string
   title: string
   rating: string | null
   risk_level: string | null
@@ -409,6 +410,7 @@ const RESEARCH_REPORT_SELECT_SQL = `
   SELECT
     research_reports.id AS report_id,
     research_reports.run_id,
+    research_runs.session_id,
     research_reports.title,
     research_reports.rating,
     research_reports.risk_level,
@@ -484,6 +486,7 @@ function mapResearchReportRow(row: ResearchReportRow): StockResearchReport {
   return {
     id: row.report_id,
     runId: row.run_id,
+    sessionId: row.session_id,
     title: row.title,
     symbol: mapSymbolRow(row),
     rating: row.rating,

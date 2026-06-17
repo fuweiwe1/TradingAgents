@@ -89,11 +89,13 @@ describe('StockStorageService', () => {
       {
         id: report.id,
         runId: run.id,
+        sessionId: 'session-1',
         title: 'AAPL Research Report',
         symbol: { displaySymbol: 'AAPL' },
       },
     ])
     expect(service.getResearchReport(report.id)).toMatchObject({
+      sessionId: 'session-1',
       contentMarkdown: expect.stringContaining('Not investment advice'),
     })
 
