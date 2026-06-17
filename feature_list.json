@@ -1,6 +1,6 @@
 {
   "project": "StockCraft",
-  "last_updated": "2026-06-16",
+  "last_updated": "2026-06-17",
   "rules": {
     "single_active_feature": true,
     "passing_requires_evidence": true,
@@ -154,15 +154,18 @@
       "area": "reports",
       "title": "实现独立报告中心",
       "user_visible_behavior": "用户可以查看历史股票研究报告、筛选、打开详情、跳回原会话并导出 Markdown。",
-      "status": "not_started",
+      "status": "in_progress",
       "verification": [
         "报告列表展示股票、市场、风险等级、创建时间。",
         "报告详情展示完整章节和免责声明。",
         "从报告可跳回关联 Craft session。",
         "Markdown 导出内容完整。"
       ],
-      "evidence": [],
-      "notes": "依赖 stock-002。"
+      "evidence": [
+        "2026-06-17: 用户确认采用独立 Reports 页面方案：左侧 Reports 入口、中间报告列表与筛选、右侧报告详情，并复用 stock-002 已有 list/get report RPC。",
+        "2026-06-17: 已创建 docs/superpowers/specs/2026-06-17-stock-003-reports-center-design.md，明确 renderer 本地筛选、按需加载详情、Open Session、Export MD、错误态和 TDD 验证范围。"
+      ],
+      "notes": "依赖 stock-002；当前 stock-003 分支临时基于 codex/stock-002-sqlite-storage，等 PR #2 合并后再整理 base。"
     },
     {
       "id": "stock-004",

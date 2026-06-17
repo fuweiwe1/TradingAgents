@@ -3,7 +3,7 @@
 ## 当前已验证状态
 
 - 仓库根目录：`C:\craft_agents`
-- 当前目录状态：已初始化为 git 仓库，当前分支 `codex/stock-002-sqlite-storage`，remote `origin` 指向 `https://github.com/fuweiwe1/TradingAgents.git`。
+- 当前目录状态：已初始化为 git 仓库，当前分支 `codex/stock-003-reports-center`，remote `origin` 指向 `https://github.com/fuweiwe1/TradingAgents.git`。
 - 标准启动路径：Unix/Git Bash 使用 `bash ./init.sh`；Windows 无 Bash 时使用 `powershell -ExecutionPolicy Bypass -File .\init.ps1`。
 - 标准验证路径：`powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1`、`bun install --frozen-lockfile`、`bun run typecheck:shared`。
 - 当前最高优先级未完成功能：`stock-003`，实现独立报告中心。
@@ -326,3 +326,18 @@
 - 当前进度：
   - 已生成 merge commit `8c6059d`，`codex/stock-002-sqlite-storage` 当前比远端多 2 个提交。
   - 下一步是推送分支并重新确认 PR #2 diff 与 GitHub Actions 状态。
+
+### Session 013
+
+- 日期：2026-06-17
+- 本轮目标：为 `stock-003` 独立 Reports 中心确认设计并落盘 spec。
+- 已完成：
+  - 按开工流程确认当前目录为 `C:\craft_agents`，读取 `claude-progress.md` 与 `feature_list.json`，查看最近提交，并运行 Windows 标准入口 `powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1`。
+  - 确认 `stock-003` 是最高优先级未完成项，目标为独立 Reports 页面。
+  - 与用户确认采用 A 方案：独立 Reports 页面，复用 `stock-002` 已有 `listStockResearchReports` / `getStockResearchReport` RPC，renderer 本地筛选。
+  - 用视觉草图确认页面信息架构：左侧 Reports 入口、中间报告列表与筛选、右侧报告详情，详情提供 `Open Session` 与 `Export MD`。
+  - 发现 `origin/main` 尚未包含 PR #2 的 stock storage RPC，因此将 `codex/stock-003-reports-center` 基于 `codex/stock-002-sqlite-storage` 创建；待 PR #2 合并后再整理 base。
+  - 创建 `docs/superpowers/specs/2026-06-17-stock-003-reports-center-design.md`。
+- 当前进度：
+  - `stock-003` 进入设计阶段，尚未开始实现代码。
+  - 下一步是请用户 review spec；确认后使用 writing-plans skill 写实现计划。
