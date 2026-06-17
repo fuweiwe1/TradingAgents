@@ -22,10 +22,17 @@ export function downloadMarkdownFile(filename: string, markdown: string): void {
   const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' })
   const url = URL.createObjectURL(blob)
   const anchor = document.createElement('a')
-  anchor.href = url
-  anchor.download = filename
-  document.body.appendChild(anchor)
-  anchor.click()
-  anchor.remove()
-  URL.revokeObjectURL(url)
+  let appended = false
+  try {
+    anchor.href = url
+    anchor.download = filename
+    document.body.appendChild(anchor)
+    appended = true
+    anchor.click()
+  } finally {
+    if (appended) {
+      anchor.remove()
+    }
+    URL.revokeObjectURL(url)
+  }
 }
