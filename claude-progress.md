@@ -401,3 +401,20 @@
 - Current progress:
   - `stock-003` remains `in_progress`; Task 3 is complete.
   - Next task should continue the Reports Center plan from `docs/superpowers/plans/2026-06-17-stock-003-reports-center.md`.
+
+### Session 017
+
+- Date: 2026-06-17
+- Goal: Execute StockCraft Reports Center Task 4, adding report action and page-state helpers.
+- Completed:
+  - Followed TDD: created `report-actions.test.ts` and `report-page-state.test.ts` before production modules existed.
+  - Confirmed the red test failed because `../report-actions` and `../report-page-state` were missing.
+  - Added `openStockReportSession`, `exportStockReportMarkdown`, and `downloadMarkdownFile` in `apps/electron/src/renderer/stock-reports/report-actions.ts`.
+  - Added `chooseInitialReportId` and `shouldLoadReportDetail` in `apps/electron/src/renderer/stock-reports/report-page-state.ts`.
+- Verification:
+  - Startup: `powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1` passed.
+  - Red: `bun test apps/electron/src/renderer/stock-reports/__tests__/report-actions.test.ts apps/electron/src/renderer/stock-reports/__tests__/report-page-state.test.ts` failed with missing module errors for `../report-actions` and `../report-page-state`.
+  - Green: `bun test apps/electron/src/renderer/stock-reports/__tests__/report-actions.test.ts apps/electron/src/renderer/stock-reports/__tests__/report-page-state.test.ts` passed, 6 tests, 0 fail, 8 expectations.
+- Current progress:
+  - `stock-003` remains `in_progress`; Task 4 is complete.
+  - Next task should render the Reports page and navigation entry from `docs/superpowers/plans/2026-06-17-stock-003-reports-center.md`.
