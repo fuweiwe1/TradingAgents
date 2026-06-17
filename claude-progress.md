@@ -418,3 +418,27 @@
 - Current progress:
   - `stock-003` remains `in_progress`; Task 4 is complete.
   - Next task should render the Reports page and navigation entry from `docs/superpowers/plans/2026-06-17-stock-003-reports-center.md`.
+
+### Session 018
+
+- Date: 2026-06-17
+- Goal: Execute StockCraft Reports Center Task 5, rendering the Reports page and navigation entry.
+- Completed:
+  - Added the explicit top-level reports route assertion requested for this UI wiring slice; it passed immediately because Task 3 had already established the route contract.
+  - Created `apps/electron/src/renderer/pages/ReportsPage.tsx`.
+  - ReportsPage loads report lists through `window.electronAPI.listStockResearchReports(workspaceId)` only when `workspaceId` is present.
+  - ReportsPage filters and sorts locally with the existing report helpers, selects the initial/current report with `chooseInitialReportId`, and loads details on demand with `getStockResearchReport(workspaceId, selectedReportId)`.
+  - Added list/detail loading, error, empty states; detail actions for Open Session and Export MD; report metadata, summary, markdown body, and disclaimer rendering.
+  - Exported ReportsPage from the pages barrel and rendered it from `MainContentPanel` for reports navigation.
+  - Added the left-sidebar Reports entry in `AppShell` using the existing navigate/routes pattern and `FileText` icon.
+  - Added `sidebar.reports` to `en` and `zh-Hans`; i18n parity also required adding the same key to `de`, `es`, `hu`, `ja`, and `pl`.
+- Verification:
+  - Startup: `powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1` passed.
+  - Route guard after test insertion: `bun test apps/electron/src/shared/__tests__/route-parser-reports.test.ts` passed, 6 tests, 0 fail.
+  - Focused suite: `bun test apps/electron/src/shared/__tests__/route-parser-reports.test.ts apps/electron/src/renderer/stock-reports/__tests__/report-filtering.test.ts apps/electron/src/renderer/stock-reports/__tests__/report-export.test.ts apps/electron/src/renderer/stock-reports/__tests__/report-actions.test.ts apps/electron/src/renderer/stock-reports/__tests__/report-page-state.test.ts apps/electron/src/renderer/lib/__tests__/nav-helpers.test.ts` passed, 20 tests, 0 fail.
+  - Typecheck: `cd apps/electron; bun run typecheck` passed.
+  - Locale sorted check: `bun run lint:i18n:sorted` passed.
+  - Locale parity check: first failed because `sidebar.reports` was missing from `de`, `es`, `hu`, `ja`, and `pl`; after adding those narrow keys, `bun run lint:i18n:parity` passed.
+- Current progress:
+  - `stock-003` remains `in_progress`; Task 5 is complete.
+  - Next task should perform the final verification/recording slice from `docs/superpowers/plans/2026-06-17-stock-003-reports-center.md`.

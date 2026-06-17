@@ -26,6 +26,12 @@ describe('route-parser: reports routes', () => {
     })
   })
 
+  it('keeps reports as a top-level view route type', () => {
+    const route = routes.view.reports()
+    const state = parseRouteToNavigationState(route)
+    expect(state).toEqual({ navigator: 'reports', details: null })
+  })
+
   it('roundtrips reports navigation state back to route', () => {
     expect(buildRouteFromNavigationState({ navigator: 'reports', details: null })).toBe('reports')
   })
