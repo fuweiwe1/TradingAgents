@@ -338,6 +338,7 @@
   - 用视觉草图确认页面信息架构：左侧 Reports 入口、中间报告列表与筛选、右侧报告详情，详情提供 `Open Session` 与 `Export MD`。
   - 发现 `origin/main` 尚未包含 PR #2 的 stock storage RPC，因此将 `codex/stock-003-reports-center` 基于 `codex/stock-002-sqlite-storage` 创建；待 PR #2 合并后再整理 base。
   - 创建 `docs/superpowers/specs/2026-06-17-stock-003-reports-center-design.md`。
+  - 用户确认 spec 后，使用 writing-plans skill 创建 `docs/superpowers/plans/2026-06-17-stock-003-reports-center.md`，把实现拆成 6 个 TDD 任务。
 - 当前进度：
-  - `stock-003` 进入设计阶段，尚未开始实现代码。
-  - 下一步是请用户 review spec；确认后使用 writing-plans skill 写实现计划。
+  - `stock-003` 设计与实现计划已落盘，尚未开始实现代码。
+  - 下一步是按计划执行，推荐使用 subagent-driven development；若用户选择 inline，也可用 executing-plans 顺序执行。
