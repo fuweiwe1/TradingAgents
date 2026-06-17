@@ -442,3 +442,26 @@
 - Current progress:
   - `stock-003` remains `in_progress`; Task 5 is complete.
   - Next task should perform the final verification/recording slice from `docs/superpowers/plans/2026-06-17-stock-003-reports-center.md`.
+
+### Session 019
+
+- Date: 2026-06-17
+- Goal: Address Task 5 code quality review for ReportsPage state refresh behavior.
+- Completed:
+  - Verified the review finding in `apps/electron/src/renderer/pages/ReportsPage.tsx`: detail load skipping was keyed only by selected report id, and list refresh did not force selected detail reload.
+  - Added workspace-tagged report/detail rendering so reports and details from the previous workspace are hidden immediately during workspace transitions.
+  - Reset list-derived and detail state on every `workspaceId` change.
+  - Added `detailRefreshKey` and loaded refresh tracking so Refresh and Retry can refetch the selected detail even when the selected report id is unchanged.
+  - Updated the Refresh button to reload both the list and selected detail.
+  - Added a detail error Retry button.
+  - Added `aria-label="Search reports"` to the search input and `aria-current` to selected report rows.
+- Verification:
+  - Startup: `powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1` passed.
+  - Focused suite: `bun test apps/electron/src/shared/__tests__/route-parser-reports.test.ts apps/electron/src/renderer/stock-reports/__tests__/report-filtering.test.ts apps/electron/src/renderer/stock-reports/__tests__/report-export.test.ts apps/electron/src/renderer/stock-reports/__tests__/report-actions.test.ts apps/electron/src/renderer/stock-reports/__tests__/report-page-state.test.ts apps/electron/src/renderer/lib/__tests__/nav-helpers.test.ts` passed, 20 tests, 0 fail.
+  - Typecheck: `cd apps/electron; bun run typecheck` passed.
+  - `python -m json.tool feature_list.json` passed.
+  - `git diff --check` passed with only expected CRLF warnings.
+- Test note:
+  - No component-level test was added because there is no established nearby React DOM test harness for `ReportsPage`; verification used the existing focused route/helper tests plus Electron typecheck.
+- Current progress:
+  - `stock-003` remains `in_progress`; Task 5 code quality review fixes are complete.

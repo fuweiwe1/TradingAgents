@@ -20,6 +20,7 @@ interface ReportsPageProps {
 }
 
 const reportDisclaimer = 'For research only. Not investment advice.'
+const emptyReports: StockResearchReport[] = []
 
 function formatReportDate(timestamp: number): string {
   return new Intl.DateTimeFormat(undefined, {
@@ -48,27 +49,39 @@ function ReportMetaPill({ label, value }: { label: string; value: string }) {
 export default function ReportsPage({ workspaceId }: ReportsPageProps) {
   const { navigateToSession } = useNavigation()
   const [reports, setReports] = React.useState<StockResearchReport[]>([])
+  const [reportsWorkspaceId, setReportsWorkspaceId] = React.useState<string | null>(null)
   const [selectedReportId, setSelectedReportId] = React.useState<string | null>(null)
   const [detail, setDetail] = React.useState<StockResearchReport | null>(null)
+  const [detailWorkspaceId, setDetailWorkspaceId] = React.useState<string | null>(null)
   const [loadedReportId, setLoadedReportId] = React.useState<string | null>(null)
+  const [loadedDetailRefreshKey, setLoadedDetailRefreshKey] = React.useState(0)
   const [listLoading, setListLoading] = React.useState(false)
   const [detailLoading, setDetailLoading] = React.useState(false)
   const [listError, setListError] = React.useState<string | null>(null)
   const [detailError, setDetailError] = React.useState<string | null>(null)
   const [filters, setFilters] = React.useState<StockReportFilters>({ query: '', riskLevel: 'all' })
   const [refreshKey, setRefreshKey] = React.useState(0)
+  const [detailRefreshKey, setDetailRefreshKey] = React.useState(0)
 
   React.useEffect(() => {
-    if (!workspaceId) {
-      setReports([])
-      setSelectedReportId(null)
-      setDetail(null)
-      setLoadedReportId(null)
-      setListLoading(false)
-      setListError(null)
-      return
-    }
+    setReports([])
+    setReportsWorkspaceId(null)
+    setSelectedReportId(null)
+    setDetail(null)
+    setDetailWorkspaceId(null)
+    setLoadedReportId(null)
+    setLoadedDetailRefreshKey(0)
+    setListError(null)
+    setDetailError(null)
+    setDetailLoading(false)
 
+    if (!workspaceId) {
+      setListLoading(false)
+    }
+  }, [workspaceId])
+
+  React.useEffect(() => {
+    if (!workspaceId) return
     let stale = false
     setListLoading(true)
     setListError(null)
@@ -77,10 +90,12 @@ export default function ReportsPage({ workspaceId }: ReportsPageProps) {
       .then((items) => {
         if (stale) return
         setReports(items)
+        setReportsWorkspaceId(workspaceId)
       })
       .catch((error) => {
         if (stale) return
         setReports([])
+        setReportsWorkspaceId(workspaceId)
         setListError(error instanceof Error ? error.message : 'Failed to load reports.')
       })
       .finally(() => {
@@ -92,11 +107,15 @@ export default function ReportsPage({ workspaceId }: ReportsPageProps) {
     }
   }, [workspaceId, refreshKey])
 
-  const visibleReports = React.useMemo(() => {
-    return sortStockReportsNewestFirst(filterStockReports(reports, filters))
-  }, [reports, filters])
+  const currentWorkspaceReports = reportsWorkspaceId === workspaceId ? reports : emptyReports
 
-  const riskOptions = React.useMemo(() => reportRiskOptions(reports), [reports])
+  const visibleReports = React.useMemo(() => {
+    return sortStockReportsNewestFirst(filterStockReports(currentWorkspaceReports, filters))
+  }, [currentWorkspaceReports, filters])
+
+  const riskOptions = React.useMemo(() => reportRiskOptions(currentWorkspaceReports), [currentWorkspaceReports])
+
+  const currentDetail = detailWorkspaceId === workspaceId && detail?.id === selectedReportId ? detail : null
 
   React.useEffect(() => {
     const nextReportId = chooseInitialReportId(visibleReports, selectedReportId)
@@ -108,13 +127,18 @@ export default function ReportsPage({ workspaceId }: ReportsPageProps) {
   React.useEffect(() => {
     if (!selectedReportId) {
       setDetail(null)
+      setDetailWorkspaceId(null)
       setLoadedReportId(null)
+      setLoadedDetailRefreshKey(0)
       setDetailError(null)
       setDetailLoading(false)
       return
     }
 
-    if (!workspaceId || !shouldLoadReportDetail(selectedReportId, loadedReportId)) {
+    const shouldLoadSelectedDetail = shouldLoadReportDetail(selectedReportId, loadedReportId)
+      || detailRefreshKey !== loadedDetailRefreshKey
+
+    if (!workspaceId || !shouldLoadSelectedDetail) {
       return
     }
 
@@ -126,11 +150,14 @@ export default function ReportsPage({ workspaceId }: ReportsPageProps) {
       .then((report) => {
         if (stale) return
         setDetail(report)
+        setDetailWorkspaceId(workspaceId)
         setLoadedReportId(report.id)
+        setLoadedDetailRefreshKey(detailRefreshKey)
       })
       .catch((error) => {
         if (stale) return
         setDetail(null)
+        setDetailWorkspaceId(null)
         setLoadedReportId(null)
         setDetailError(error instanceof Error ? error.message : 'Failed to load report detail.')
       })
@@ -141,27 +168,37 @@ export default function ReportsPage({ workspaceId }: ReportsPageProps) {
     return () => {
       stale = true
     }
-  }, [workspaceId, selectedReportId, loadedReportId])
+  }, [workspaceId, selectedReportId, loadedReportId, detailRefreshKey, loadedDetailRefreshKey])
+
+  const handleRefresh = React.useCallback(() => {
+    setRefreshKey(key => key + 1)
+    setDetailRefreshKey(key => key + 1)
+  }, [])
+
+  const handleRetryDetail = React.useCallback(() => {
+    setDetailRefreshKey(key => key + 1)
+  }, [])
 
   const handleOpenSession = React.useCallback(() => {
-    if (!detail) return
-    openStockReportSession(detail, navigateToSession)
-  }, [detail, navigateToSession])
+    if (!currentDetail) return
+    openStockReportSession(currentDetail, navigateToSession)
+  }, [currentDetail, navigateToSession])
 
   const handleExportMarkdown = React.useCallback(() => {
-    if (!detail) return
+    if (!currentDetail) return
     try {
-      exportStockReportMarkdown(detail, downloadMarkdownFile)
+      exportStockReportMarkdown(currentDetail, downloadMarkdownFile)
     } catch (error) {
       toast.error('Failed to export report.', {
         description: error instanceof Error ? error.message : undefined,
       })
     }
-  }, [detail])
+  }, [currentDetail])
 
-  const listEmpty = !listLoading && !listError && reports.length === 0
-  const filterEmpty = !listLoading && !listError && reports.length > 0 && visibleReports.length === 0
-  const detailEmpty = !detailLoading && !detailError && !detail
+  const listLoadingCurrentWorkspace = Boolean(workspaceId && reportsWorkspaceId !== workspaceId) || listLoading
+  const listEmpty = !listLoadingCurrentWorkspace && !listError && currentWorkspaceReports.length === 0
+  const filterEmpty = !listLoadingCurrentWorkspace && !listError && currentWorkspaceReports.length > 0 && visibleReports.length === 0
+  const detailEmpty = !detailLoading && !detailError && !currentDetail
 
   return (
     <div className="flex h-full min-h-0 bg-background text-foreground">
@@ -171,18 +208,18 @@ export default function ReportsPage({ workspaceId }: ReportsPageProps) {
             <div className="min-w-0">
               <h1 className="truncate text-base font-semibold">Reports</h1>
               <p className="mt-0.5 text-xs text-muted-foreground">
-                {visibleReports.length} of {reports.length}
+                {visibleReports.length} of {currentWorkspaceReports.length}
               </p>
             </div>
             <Button
               type="button"
               variant="ghost"
               size="icon"
-              onClick={() => setRefreshKey(key => key + 1)}
-              disabled={!workspaceId || listLoading}
+              onClick={handleRefresh}
+              disabled={!workspaceId || listLoadingCurrentWorkspace || detailLoading}
               aria-label="Refresh reports"
             >
-              <RefreshCw className={cn('h-4 w-4', listLoading && 'animate-spin')} />
+              <RefreshCw className={cn('h-4 w-4', (listLoadingCurrentWorkspace || detailLoading) && 'animate-spin')} />
             </Button>
           </div>
           <div className="mt-3 flex items-center gap-2">
@@ -192,6 +229,7 @@ export default function ReportsPage({ workspaceId }: ReportsPageProps) {
                 value={filters.query}
                 onChange={(event) => setFilters(current => ({ ...current, query: event.target.value }))}
                 placeholder="Search reports"
+                aria-label="Search reports"
                 className="h-8 pl-8 text-sm"
               />
             </div>
@@ -215,7 +253,7 @@ export default function ReportsPage({ workspaceId }: ReportsPageProps) {
               Select a workspace to view reports.
             </div>
           )}
-          {workspaceId && listLoading && (
+          {workspaceId && listLoadingCurrentWorkspace && (
             <div className="px-4 py-6 text-sm text-muted-foreground">Loading reports...</div>
           )}
           {workspaceId && listError && (
@@ -234,6 +272,7 @@ export default function ReportsPage({ workspaceId }: ReportsPageProps) {
                 key={report.id}
                 type="button"
                 onClick={() => setSelectedReportId(report.id)}
+                aria-current={selected ? 'true' : undefined}
                 className={cn(
                   'block w-full border-b border-border/50 px-4 py-3 text-left transition-colors hover:bg-foreground/[0.03] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-foreground/30',
                   selected && 'bg-foreground/[0.05]',
@@ -266,8 +305,17 @@ export default function ReportsPage({ workspaceId }: ReportsPageProps) {
           </div>
         )}
         {detailError && (
-          <div className="flex h-full items-center justify-center px-6 text-center text-sm text-destructive">
-            {detailError}
+          <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center">
+            <p className="text-sm text-destructive">{detailError}</p>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleRetryDetail}
+              disabled={!workspaceId || !selectedReportId || detailLoading}
+            >
+              Retry
+            </Button>
           </div>
         )}
         {detailEmpty && (
@@ -275,16 +323,16 @@ export default function ReportsPage({ workspaceId }: ReportsPageProps) {
             Select a report to view details.
           </div>
         )}
-        {detail && !detailLoading && !detailError && (
+        {currentDetail && !detailLoading && !detailError && (
           <article className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-8 py-7">
             <header className="border-b border-border/70 pb-5">
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0">
                   <p className="text-xs font-medium uppercase tracking-normal text-muted-foreground">
-                    {detail.symbol.displaySymbol} / {detail.symbol.market}
+                    {currentDetail.symbol.displaySymbol} / {currentDetail.symbol.market}
                   </p>
-                  <h2 className="mt-2 text-2xl font-semibold tracking-normal">{detail.title}</h2>
-                  <p className="mt-2 text-sm text-muted-foreground">{formatReportDate(detail.createdAt)}</p>
+                  <h2 className="mt-2 text-2xl font-semibold tracking-normal">{currentDetail.title}</h2>
+                  <p className="mt-2 text-sm text-muted-foreground">{formatReportDate(currentDetail.createdAt)}</p>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   <Button type="button" variant="outline" size="sm" onClick={handleOpenSession}>
@@ -298,23 +346,23 @@ export default function ReportsPage({ workspaceId }: ReportsPageProps) {
                 </div>
               </div>
               <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
-                <ReportMetaPill label="Symbol" value={detail.symbol.displaySymbol} />
-                <ReportMetaPill label="Market" value={detail.symbol.market} />
-                <ReportMetaPill label="Rating" value={detail.rating ?? 'Unrated'} />
-                <ReportMetaPill label="Risk" value={detail.riskLevel ?? 'Unspecified'} />
+                <ReportMetaPill label="Symbol" value={currentDetail.symbol.displaySymbol} />
+                <ReportMetaPill label="Market" value={currentDetail.symbol.market} />
+                <ReportMetaPill label="Rating" value={currentDetail.rating ?? 'Unrated'} />
+                <ReportMetaPill label="Risk" value={currentDetail.riskLevel ?? 'Unspecified'} />
               </div>
             </header>
 
             <section>
               <h3 className="text-sm font-semibold">Summary</h3>
-              <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-foreground/85">{detail.summary}</p>
+              <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-foreground/85">{currentDetail.summary}</p>
             </section>
 
             <section>
               <h3 className="text-sm font-semibold">Full Markdown</h3>
               <div className="mt-3 border-t border-border/70 pt-4">
                 <Markdown className="max-w-none text-sm leading-6">
-                  {detail.contentMarkdown}
+                  {currentDetail.contentMarkdown}
                 </Markdown>
               </div>
             </section>
