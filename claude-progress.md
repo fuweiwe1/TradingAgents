@@ -465,3 +465,28 @@
   - No component-level test was added because there is no established nearby React DOM test harness for `ReportsPage`; verification used the existing focused route/helper tests plus Electron typecheck.
 - Current progress:
   - `stock-003` remains `in_progress`; Task 5 code quality review fixes are complete.
+
+### Session 020
+
+- Date: 2026-06-17
+- Goal: Complete StockCraft Reports Center Task 6, final verification and persistent handoff.
+- Completed:
+  - Marked `stock-003` as `passing` in `feature_list.json`.
+  - Recorded final Reports Center evidence after the implementation and review-fix commits.
+  - Confirmed the Reports Center now covers report list/detail UI, local filtering, route/sidebar integration, Open Session, Markdown export, and workspace-safe refresh/retry behavior.
+- Verification:
+  - Focused suite passed: `bun test packages/server-core/src/stock/stock-storage.test.ts packages/server-core/src/handlers/rpc/stock-research.test.ts apps/electron/src/shared/__tests__/route-parser-reports.test.ts apps/electron/src/shared/__tests__/route-parser-automations.test.ts apps/electron/src/renderer/stock-reports/__tests__/report-filtering.test.ts apps/electron/src/renderer/stock-reports/__tests__/report-export.test.ts apps/electron/src/renderer/stock-reports/__tests__/report-actions.test.ts apps/electron/src/renderer/stock-reports/__tests__/report-page-state.test.ts apps/electron/src/shared/__tests__/ipc-channels.test.ts apps/electron/src/renderer/lib/__tests__/nav-helpers.test.ts` passed with 43 tests, 0 failures, and 131 expectations.
+  - `bun run typecheck:shared` passed.
+  - `cd packages/server-core && bun run typecheck` passed.
+  - `cd apps/electron && bun run typecheck` passed.
+  - `powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1` passed.
+  - `bun run lint:i18n:sorted` passed.
+  - `bun run lint:i18n:parity` passed with 6 locales and 1437 keys each.
+  - `python -m json.tool feature_list.json` passed.
+  - `git diff --check` passed after final record edits.
+- Current progress:
+  - `stock-003` is now `passing`.
+  - Next highest-priority feature is `stock-004`, the lightweight Watchlist.
+- Known risk/blocker:
+  - `codex/stock-003-reports-center` is still temporarily based on `codex/stock-002-sqlite-storage` until PR #2 lands.
+  - On this Windows machine, `bash ./init.sh` still enters the broken WSL path where `/bin/bash` is missing; the standard local startup path remains `init.ps1`.
