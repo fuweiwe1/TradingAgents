@@ -376,3 +376,28 @@
 - Current progress:
   - `stock-003` remains `in_progress`; Task 2 is complete.
   - Next task should add the Reports route and navigation state from `docs/superpowers/plans/2026-06-17-stock-003-reports-center.md`.
+
+### Session 016
+
+- Date: 2026-06-17
+- Goal: Execute StockCraft Reports Center Task 3, adding the Reports route and navigation state.
+- Completed:
+  - Followed TDD: created `apps/electron/src/shared/__tests__/route-parser-reports.test.ts` before production route changes.
+  - Confirmed the red test failed because `routes.view.reports`, compound parsing, navigation-state conversion, and reports roundtrip support were missing.
+  - Added `routes.view.reports()` returning `reports`.
+  - Added `ReportsNavigationState`, `isReportsNavigation`, and reports handling for navigation state keys.
+  - Added reports handling to compound route parsing, parsed view conversion, navigation-state conversion, and route rebuilding.
+  - Re-exported `isReportsNavigation` from `NavigationContext`.
+  - Fixed the compile fallout in pure navigation helper detail-mode handling: reports is navigator-only and returns `false`.
+- Verification:
+  - Startup: `powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1` passed.
+  - Baseline smoke before edits: `bun test apps/electron/src/shared/__tests__/route-parser-automations.test.ts apps/electron/src/renderer/contexts/__tests__/navigation-history-key.test.ts apps/electron/src/renderer/contexts/__tests__/navigation-reconcile.test.ts` passed, 21 tests, 0 fail.
+  - Red: `bun test apps/electron/src/shared/__tests__/route-parser-reports.test.ts` failed as expected, 0 pass / 5 fail, with missing reports route/parser/navigation support.
+  - Green: `bun test apps/electron/src/shared/__tests__/route-parser-reports.test.ts` passed, 5 tests, 0 fail.
+  - Follow-on red for typecheck fallout: `bun test apps/electron/src/renderer/lib/__tests__/nav-helpers.test.ts` failed because reports detail-mode returned `undefined`.
+  - Follow-on green: `bun test apps/electron/src/renderer/lib/__tests__/nav-helpers.test.ts` passed, 1 test, 0 fail.
+  - Regression: `bun test apps/electron/src/shared/__tests__/route-parser-automations.test.ts apps/electron/src/renderer/contexts/__tests__/navigation-history-key.test.ts apps/electron/src/renderer/contexts/__tests__/navigation-reconcile.test.ts` passed, 21 tests, 0 fail.
+  - Typecheck: `cd apps/electron && bun run typecheck` passed.
+- Current progress:
+  - `stock-003` remains `in_progress`; Task 3 is complete.
+  - Next task should continue the Reports Center plan from `docs/superpowers/plans/2026-06-17-stock-003-reports-center.md`.

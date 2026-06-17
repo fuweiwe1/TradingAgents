@@ -866,6 +866,15 @@ export interface AutomationsNavigationState {
 }
 
 /**
+ * Reports navigation state
+ */
+export interface ReportsNavigationState {
+  navigator: 'reports'
+  details: null
+  rightSidebar?: RightSidebarPanel
+}
+
+/**
  * Unified navigation state
  */
 export type NavigationState =
@@ -874,6 +883,7 @@ export type NavigationState =
   | SettingsNavigationState
   | SkillsNavigationState
   | AutomationsNavigationState
+  | ReportsNavigationState
 
 export const isSessionsNavigation = (
   state: NavigationState
@@ -895,6 +905,10 @@ export const isAutomationsNavigation = (
   state: NavigationState
 ): state is AutomationsNavigationState => state.navigator === 'automations'
 
+export const isReportsNavigation = (
+  state: NavigationState
+): state is ReportsNavigationState => state.navigator === 'reports'
+
 export const DEFAULT_NAVIGATION_STATE: NavigationState = {
   navigator: 'sessions',
   filter: { kind: 'allSessions' },
@@ -902,6 +916,9 @@ export const DEFAULT_NAVIGATION_STATE: NavigationState = {
 }
 
 export const getNavigationStateKey = (state: NavigationState): string => {
+  if (state.navigator === 'reports') {
+    return 'reports'
+  }
   if (state.navigator === 'sources') {
     if (state.details) {
       return `sources/source/${state.details.sourceSlug}`
@@ -938,6 +955,9 @@ export const getNavigationStateKey = (state: NavigationState): string => {
 }
 
 export const parseNavigationStateKey = (key: string): NavigationState | null => {
+  // Handle reports
+  if (key === 'reports') return { navigator: 'reports', details: null }
+
   // Handle sources
   if (key === 'sources') return { navigator: 'sources', details: null }
   if (key.startsWith('sources/source/')) {
