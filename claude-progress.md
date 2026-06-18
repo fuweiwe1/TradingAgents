@@ -530,3 +530,32 @@
 - Known risk/blocker:
   - PR #2 is not merged, so a Reports Center PR opened now would need to target `codex/stock-002-sqlite-storage` as a stacked PR or temporarily include the storage changes when targeting `main`.
   - On this Windows machine, `bash ./init.sh` still enters the broken WSL path where `/bin/bash` is missing; use `init.ps1`.
+
+### Session 023
+
+- Date: 2026-06-18
+- Goal: Locally merge the completed Reports Center branch into `codex/stock-002-sqlite-storage`.
+- Completed:
+  - Confirmed `codex/stock-003-reports-center` was clean and reran its focused tests and typechecks before integration.
+  - Switched to `codex/stock-002-sqlite-storage`.
+  - Attempted `git pull --ff-only`; it failed because GitHub port 443 timed out. The local branch matched the cached `origin/codex/stock-002-sqlite-storage` ref before the attempt.
+  - Fast-forward merged `codex/stock-003-reports-center` into the local `codex/stock-002-sqlite-storage` branch.
+  - Preserved the local `.superpowers/brainstorm/` directory; the merged `.gitignore` entry now ignores it.
+  - Re-ran verification on the merged result.
+- Verification:
+  - Focused suite passed with 43 tests, 0 failures, and 131 expectations.
+  - `bun run typecheck:shared`: passed.
+  - `cd packages/server-core && bun run typecheck`: passed.
+  - `cd apps/electron && bun run typecheck`: passed.
+  - `powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1`: passed.
+  - `bun run lint:i18n:sorted`: passed after running the standard `bun run sort-locales`; the rewrite produced no actual Git content diff.
+  - `bun run lint:i18n:parity`: passed with 6 locales and 1437 keys each.
+  - `python -m json.tool feature_list.json`: passed.
+  - `git diff --check`: passed.
+- Current progress:
+  - `stock-003` remains `passing` and is locally integrated into `codex/stock-002-sqlite-storage`.
+  - The next highest-priority feature remains `stock-004`, the lightweight Watchlist.
+- Known risk/blocker:
+  - The combined local branch is ahead of `origin/codex/stock-002-sqlite-storage`; no push was requested in this session.
+  - GitHub network access timed out during `git pull --ff-only`, so remote freshness beyond the cached origin ref could not be confirmed.
+  - On this Windows machine, use `init.ps1`; the WSL `/bin/bash` path remains unavailable.
