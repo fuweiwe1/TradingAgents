@@ -115,6 +115,13 @@ export interface UpdateStockWatchlistItemRequest {
 
 The stock symbol is intentionally not editable. Changing the symbol requires adding another entry and removing the old one.
 
+Update field semantics are patch-like:
+
+- Omitted `groupName` preserves the current group.
+- `groupName: null`, an empty string, or whitespace moves the entry to the canonical `Default` ungrouped bucket.
+- Omitted `note` preserves the current note.
+- `note: null` clears the note.
+
 ## Storage and RPC Boundary
 
 ### Storage
@@ -134,10 +141,10 @@ updateWatchlistItem(
 The update operation:
 
 1. Loads the existing item or throws a not-found error.
-2. Normalizes `groupName`, mapping blank or omitted input to the existing canonical `Default` storage value.
+2. Preserves the current group when `groupName` is omitted; otherwise normalizes blank or null input to the existing canonical `Default` storage value.
 3. Checks whether another entry already has the same `symbol_id` and normalized target group.
 4. If a conflicting entry exists, throws a clear duplicate-target error without changing either entry.
-5. Updates `group_name`, `note`, and `updated_at` in one SQL statement.
+5. Preserves omitted fields and updates the resolved `group_name`, resolved `note`, and `updated_at` in one SQL statement.
 6. Returns the updated read model.
 
 The existing unique constraint on `(symbol_id, group_name)` remains the final integrity guard.
