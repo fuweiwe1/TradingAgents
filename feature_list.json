@@ -1,6 +1,6 @@
 {
   "project": "StockCraft",
-  "last_updated": "2026-06-17",
+  "last_updated": "2026-06-18",
   "rules": {
     "single_active_feature": true,
     "passing_requires_evidence": true,
@@ -172,7 +172,8 @@
         "2026-06-17: Task 5 complete: added ReportsPage UI and sidebar navigation entry. Route guard command passed with existing reports route support; focused report/nav helper suite passed with 20 tests; apps/electron typecheck passed; lint:i18n:sorted and lint:i18n:parity passed after adding sidebar.reports to all locale files required by parity.",
         "2026-06-17: Task 5 review fix: ReportsPage now hides previous workspace report/detail data during workspace transitions, refreshes selected detail with list refresh, exposes detail retry, and adds search/row selection accessibility attributes. Verification: focused report/nav helper suite passed; apps/electron typecheck passed; git diff --check passed with only CRLF warnings.",
         "2026-06-17: Task 6 complete: Reports Center end-to-end implementation is verified. Focused report/storage/route/helper test suite passed with 43 tests, 0 failures, and 131 expectations. Shared, server-core, and electron typechecks passed. init.ps1, lint:i18n:sorted, lint:i18n:parity, python -m json.tool feature_list.json, and git diff --check passed.",
-        "2026-06-17: Final review fix: ReportsPage list-load error state now includes a contextual Retry button wired to the existing refresh flow. Verification: focused report/storage/route/helper test suite passed again with 43 tests and 0 failures; apps/electron typecheck passed."
+        "2026-06-17: Final review fix: ReportsPage list-load error state now includes a contextual Retry button wired to the existing refresh flow. Verification: focused report/storage/route/helper test suite passed again with 43 tests and 0 failures; apps/electron typecheck passed.",
+        "2026-06-18: Final branch re-review found no new blocking issues. Fresh verification passed: 43 focused tests, shared/server-core/electron typechecks, init.ps1, i18n sorted/parity checks, JSON validation, and git diff --check. GitHub PR #2 remains open and mergeable; no PR exists yet for codex/stock-003-reports-center."
       ],
       "notes": "stock-003 Reports Center is passing: list/detail UI, local filtering, Open Session, Markdown export, route/sidebar integration, and review fixes are implemented and verified. Branch remains temporarily based on codex/stock-002-sqlite-storage until PR #2 lands; after that, rebase/retarget before opening the final PR if needed."
     },

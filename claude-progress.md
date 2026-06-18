@@ -504,3 +504,29 @@
   - `cd apps/electron && bun run typecheck` passed.
 - Current progress:
   - `stock-003` remains `passing`; awaiting final re-review and branch finishing.
+
+### Session 022
+
+- Date: 2026-06-18
+- Goal: Resume the Reports Center work, perform final re-review, and determine the safe branch-finishing path.
+- Completed:
+  - Restored context from `claude-progress.md`, `feature_list.json`, recent commits, and the implementation plan.
+  - Confirmed the working tree is clean on `codex/stock-003-reports-center`.
+  - Reviewed the complete Reports Center diff against `codex/stock-002-sqlite-storage`; no new Critical or Important issue was found.
+  - Checked GitHub state: PR #2 (`codex/stock-002-sqlite-storage` into `main`) remains open and mergeable, and no PR exists for `codex/stock-003-reports-center`.
+- Verification:
+  - `powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1`: passed.
+  - Focused suite passed: `bun test packages/server-core/src/stock/stock-storage.test.ts packages/server-core/src/handlers/rpc/stock-research.test.ts apps/electron/src/shared/__tests__/route-parser-reports.test.ts apps/electron/src/shared/__tests__/route-parser-automations.test.ts apps/electron/src/renderer/stock-reports/__tests__/report-filtering.test.ts apps/electron/src/renderer/stock-reports/__tests__/report-export.test.ts apps/electron/src/renderer/stock-reports/__tests__/report-actions.test.ts apps/electron/src/renderer/stock-reports/__tests__/report-page-state.test.ts apps/electron/src/shared/__tests__/ipc-channels.test.ts apps/electron/src/renderer/lib/__tests__/nav-helpers.test.ts` with 43 tests, 0 failures, and 131 expectations.
+  - `bun run typecheck:shared`: passed.
+  - `cd packages/server-core && bun run typecheck`: passed.
+  - `cd apps/electron && bun run typecheck`: passed.
+  - `bun run lint:i18n:sorted`: passed.
+  - `bun run lint:i18n:parity`: passed with 6 locales and 1437 keys each.
+  - `python -m json.tool feature_list.json`: passed.
+  - `git diff --check`: passed.
+- Current progress:
+  - `stock-003` remains `passing`.
+  - Branch finishing is waiting on a user choice: merge locally, create a stacked PR, keep the branch, or discard it.
+- Known risk/blocker:
+  - PR #2 is not merged, so a Reports Center PR opened now would need to target `codex/stock-002-sqlite-storage` as a stacked PR or temporarily include the storage changes when targeting `main`.
+  - On this Windows machine, `bash ./init.sh` still enters the broken WSL path where `/bin/bash` is missing; use `init.ps1`.
