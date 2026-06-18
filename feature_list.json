@@ -184,15 +184,20 @@
       "area": "watchlist",
       "title": "实现轻量 Watchlist",
       "user_visible_behavior": "用户可以添加、删除、分组自选股，并从自选股发起研究。",
-      "status": "not_started",
+      "status": "in_progress",
       "verification": [
         "添加 A股、港股、美股自选股。",
         "按分组查看自选股。",
         "删除自选股后列表更新。",
         "从自选股点击发起研究。"
       ],
-      "evidence": [],
-      "notes": "依赖 stock-002。"
+      "evidence": [
+        "2026-06-18: 用户确认采用独立 Watchlist 页面：左侧按分组展示自选股，右侧展示详情并编辑分组/备注。",
+        "2026-06-18: 用户确认同一股票可存在于多个分组、未选择分组归入“未分组”、分组按名称排序且组内按添加时间倒序。",
+        "2026-06-18: 用户确认从 Watchlist 直接发起研究、删除需要确认、添加时支持已有/新分组和可选备注、详情支持原子编辑。",
+        "2026-06-18: 已创建 docs/superpowers/specs/2026-06-18-stock-004-watchlist-design.md，明确新增 updateWatchlistItem RPC、页面数据流、错误处理和测试边界。"
+      ],
+      "notes": "依赖 stock-002。设计已确认并落盘；下一步在用户复核 Spec 后编写 TDD 实施计划。"
     }
   ]
 }

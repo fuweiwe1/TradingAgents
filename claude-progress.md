@@ -559,3 +559,30 @@
   - The combined local branch is ahead of `origin/codex/stock-002-sqlite-storage`; no push was requested in this session.
   - GitHub network access timed out during `git pull --ff-only`, so remote freshness beyond the cached origin ref could not be confirmed.
   - On this Windows machine, use `init.ps1`; the WSL `/bin/bash` path remains unavailable.
+
+### Session 024
+
+- Date: 2026-06-18
+- Goal: Confirm the product and technical design for `stock-004`, the lightweight Watchlist.
+- Completed:
+  - Confirmed the pushed remote branch now points to local commit `d286ca8`.
+  - Created and switched to `codex/stock-004-watchlist`.
+  - Used the visual companion to compare three Watchlist layouts; the user selected a standalone top-level page.
+  - Confirmed product behavior:
+    - Select an existing group or type a new group while adding.
+    - Allow the same symbol in multiple groups.
+    - Start research immediately and navigate to the new Craft session.
+    - Require confirmation before removal.
+    - Accept an optional note during creation.
+    - Edit group and note from the detail pane.
+    - Normalize missing groups to `未分组`.
+    - Sort groups by name and entries by newest first.
+  - Confirmed the recommended technical path: add an atomic `updateWatchlistItem` RPC while keeping groups as derived strings instead of adding a groups table.
+  - Confirmed workspace-safe loading, duplicate-conflict behavior, error handling, and test boundaries.
+  - Created `docs/superpowers/specs/2026-06-18-stock-004-watchlist-design.md`.
+- Current progress:
+  - `stock-004` is now `in_progress` at the approved design stage.
+  - Next step is user review of the written Spec, followed by a TDD implementation plan.
+- Known risk/blocker:
+  - The new branch is stacked on the combined `codex/stock-002-sqlite-storage` branch and therefore depends on the storage/Reports changes already present there.
+  - On this Windows machine, use `init.ps1`; the WSL `/bin/bash` path remains unavailable.
