@@ -75,6 +75,25 @@ describe('StockStorageService', () => {
     service.close()
   })
 
+  test('moves a watchlist item between named groups without changing its note', () => {
+    const service = createService()
+    const item = service.addWatchlistItem({
+      symbol: parseStockSymbol('AAPL'),
+      groupName: 'Core',
+      note: 'Original note',
+    })
+
+    expect(service.updateWatchlistItem(item.id, {
+      groupName: 'Observe',
+    })).toMatchObject({
+      id: item.id,
+      groupName: 'Observe',
+      note: 'Original note',
+    })
+
+    service.close()
+  })
+
   test('normalizes a blank watchlist group and clears a null note', () => {
     const service = createService()
     const item = service.addWatchlistItem({
@@ -111,6 +130,7 @@ describe('StockStorageService', () => {
 
     expect(() => service.updateWatchlistItem(growth.id, {
       groupName: 'Core',
+      note: 'Should not persist',
     })).toThrow('Watchlist item already exists in group Core')
 
     expect(service.listWatchlistItems()).toEqual(expect.arrayContaining([
