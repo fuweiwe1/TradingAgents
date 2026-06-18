@@ -52,6 +52,11 @@ export interface AddStockWatchlistItemRequest {
   note?: string | null
 }
 
+export interface UpdateStockWatchlistItemRequest {
+  groupName?: string | null
+  note?: string | null
+}
+
 export interface RemoveStockWatchlistItemResult {
   success: boolean
 }

@@ -12,6 +12,7 @@ import {
   type StockResearchStepRecord,
   type StockResearchStepStatus,
   type StockWatchlistItem,
+  type UpdateStockWatchlistItemRequest,
 } from '@craft-agent/shared/stock'
 
 export interface StockStorageServiceOptions {
@@ -25,6 +26,10 @@ export interface StockStorage {
     note?: string | null
   }): StockWatchlistItem
   listWatchlistItems(): StockWatchlistItem[]
+  updateWatchlistItem(
+    id: string,
+    input: UpdateStockWatchlistItemRequest,
+  ): StockWatchlistItem
   removeWatchlistItem(id: string): boolean
   createResearchRun(input: {
     sessionId: string
@@ -154,6 +159,53 @@ export class StockStorageService {
 
   listWatchlistItems(): StockWatchlistItem[] {
     return this.db.query<WatchlistRow, []>(WATCHLIST_SELECT_SQL).all().map(mapWatchlistRow)
+  }
+
+  updateWatchlistItem(
+    id: string,
+    input: UpdateStockWatchlistItemRequest,
+  ): StockWatchlistItem {
+    const update = this.db.transaction(() => {
+      const current = this.db.query<{
+        symbol_id: string
+        group_name: string
+        note: string | null
+      }, [string]>(`
+        SELECT symbol_id, group_name, note
+        FROM watchlist_items
+        WHERE id = ?
+      `).get(id)
+
+      if (!current) {
+        throw new Error(`Watchlist item not found: ${id}`)
+      }
+
+      const groupName = input.groupName === undefined
+        ? current.group_name
+        : normalizeGroupName(input.groupName)
+      const note = input.note === undefined ? current.note : input.note
+
+      const conflict = this.db.query<{ id: string }, [string, string, string]>(`
+        SELECT id
+        FROM watchlist_items
+        WHERE symbol_id = ?
+          AND group_name = ?
+          AND id <> ?
+      `).get(current.symbol_id, groupName, id)
+
+      if (conflict) {
+        throw new Error(`Watchlist item already exists in group ${groupName}`)
+      }
+
+      this.db.query(`
+        UPDATE watchlist_items
+        SET group_name = ?, note = ?, updated_at = ?
+        WHERE id = ?
+      `).run(groupName, note, Date.now(), id)
+    })
+
+    update()
+    return this.getWatchlistItem(id)
   }
 
   removeWatchlistItem(id: string): boolean {

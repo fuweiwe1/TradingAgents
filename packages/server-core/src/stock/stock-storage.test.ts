@@ -56,6 +56,89 @@ describe('StockStorageService', () => {
     service.close()
   })
 
+  test('updates a watchlist note without changing its group', () => {
+    const service = createService()
+    const item = service.addWatchlistItem({
+      symbol: parseStockSymbol('AAPL'),
+      groupName: 'Core',
+      note: 'Original note',
+    })
+
+    expect(service.updateWatchlistItem(item.id, {
+      note: 'Updated note',
+    })).toMatchObject({
+      id: item.id,
+      groupName: 'Core',
+      note: 'Updated note',
+    })
+
+    service.close()
+  })
+
+  test('normalizes a blank watchlist group and clears a null note', () => {
+    const service = createService()
+    const item = service.addWatchlistItem({
+      symbol: parseStockSymbol('AAPL'),
+      groupName: 'Core',
+      note: 'Original note',
+    })
+
+    expect(service.updateWatchlistItem(item.id, {
+      groupName: '  ',
+      note: null,
+    })).toMatchObject({
+      id: item.id,
+      groupName: 'Default',
+      note: null,
+    })
+
+    service.close()
+  })
+
+  test('rejects a duplicate symbol and target group without changing either item', () => {
+    const service = createService()
+    const symbol = parseStockSymbol('AAPL')
+    const core = service.addWatchlistItem({
+      symbol,
+      groupName: 'Core',
+      note: 'Core note',
+    })
+    const growth = service.addWatchlistItem({
+      symbol,
+      groupName: 'Growth',
+      note: 'Growth note',
+    })
+
+    expect(() => service.updateWatchlistItem(growth.id, {
+      groupName: 'Core',
+    })).toThrow('Watchlist item already exists in group Core')
+
+    expect(service.listWatchlistItems()).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        id: growth.id,
+        groupName: 'Growth',
+        note: 'Growth note',
+      }),
+      expect.objectContaining({
+        id: core.id,
+        groupName: 'Core',
+        note: 'Core note',
+      }),
+    ]))
+
+    service.close()
+  })
+
+  test('rejects updating an unknown watchlist item', () => {
+    const service = createService()
+
+    expect(() => service.updateWatchlistItem('missing', {
+      note: 'No-op',
+    })).toThrow('Watchlist item not found: missing')
+
+    service.close()
+  })
+
   test('creates research runs with five pending steps and stores reports', () => {
     const service = createService()
     const symbol = parseStockSymbol('AAPL')
