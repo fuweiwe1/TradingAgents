@@ -586,3 +586,20 @@
 - Known risk/blocker:
   - The new branch is stacked on the combined `codex/stock-002-sqlite-storage` branch and therefore depends on the storage/Reports changes already present there.
   - On this Windows machine, use `init.ps1`; the WSL `/bin/bash` path remains unavailable.
+
+### Session 025
+
+- Date: 2026-06-18
+- Goal: Turn the approved `stock-004` Watchlist Spec into an executable TDD implementation plan.
+- Completed:
+  - Received final user approval for `docs/superpowers/specs/2026-06-18-stock-004-watchlist-design.md`.
+  - Clarified patch semantics in the Spec: omitted update fields preserve current values; explicit blank/null group moves to the canonical `Default` ungrouped bucket; `note: null` clears the note.
+  - Created `docs/superpowers/plans/2026-06-18-stock-004-watchlist.md`.
+  - Split implementation into seven tasks: storage update, RPC/API wiring, renderer helpers, route/navigation, dialogs, page/sidebar/i18n wiring, and final verification/records.
+  - Self-reviewed the plan for Spec coverage, TDD ordering, type/signature consistency, path correctness, and scope.
+- Current progress:
+  - `stock-004` remains `in_progress`.
+  - The implementation plan is ready for execution.
+- Known risk/blocker:
+  - The branch remains stacked on `codex/stock-002-sqlite-storage`.
+  - On this Windows machine, use `init.ps1`; the WSL `/bin/bash` path remains unavailable.
