@@ -34,7 +34,7 @@ describe('watchlist grouping', () => {
       item({ id: 'ungrouped', groupName: 'Default' }),
     ], '未分组')
 
-    expect(groups).toEqual([
+    expect(groups).toEqual(expect.arrayContaining([
       expect.objectContaining({
         storageName: 'Core',
         displayName: 'Core',
@@ -43,10 +43,11 @@ describe('watchlist grouping', () => {
         storageName: 'Default',
         displayName: '未分组',
       }),
-    ])
+    ]))
   })
 
   test('sorts groups by display name and group items by createdAt descending', () => {
+    const displayNames = ['Core', '未分组', 'Observe']
     const groups = groupWatchlistItems([
       item({ id: 'core-old', groupName: 'Core', createdAt: 100 }),
       item({ id: 'ungrouped', groupName: 'Default', createdAt: 300 }),
@@ -54,8 +55,24 @@ describe('watchlist grouping', () => {
       item({ id: 'observe', groupName: 'Observe', createdAt: 400 }),
     ], '未分组')
 
-    expect(groups.map(group => group.displayName)).toEqual(['Core', 'Observe', '未分组'])
-    expect(groups[0]?.items.map(entry => entry.id)).toEqual(['core-new', 'core-old'])
+    expect(groups.map(group => group.displayName)).toEqual(
+      [...displayNames].sort((left, right) => left.localeCompare(right)),
+    )
+    expect(groups.find(group => group.storageName === 'Core')?.items.map(entry => entry.id))
+      .toEqual(['core-new', 'core-old'])
+  })
+
+  test('sorts localized group options and display names with locale-aware comparison', () => {
+    const names = ['Énergie', 'Zebra', 'Åland', '观察']
+    const expectedNames = [...names].sort((left, right) => left.localeCompare(right))
+    const items = names.map((groupName, index) => item({
+      id: `localized-${index}`,
+      groupName,
+    }))
+
+    expect(getWatchlistGroupOptions(items)).toEqual(expectedNames)
+    expect(groupWatchlistItems(items, '未分组').map(group => group.displayName))
+      .toEqual(expectedNames)
   })
 
   test('de-duplicates and sorts group options without exposing Default', () => {

@@ -8,12 +8,6 @@ export interface WatchlistGroup {
   items: StockWatchlistItem[]
 }
 
-function compareNames(left: string, right: string): number {
-  if (left < right) return -1
-  if (left > right) return 1
-  return 0
-}
-
 export function toEditableGroupName(groupName: string): string {
   return groupName === UNGROUPED_STORAGE_NAME ? '' : groupName
 }
@@ -23,7 +17,7 @@ export function getWatchlistGroupOptions(items: StockWatchlistItem[]): string[] 
     items
       .map(item => item.groupName.trim())
       .filter(groupName => groupName && groupName !== UNGROUPED_STORAGE_NAME),
-  )].sort(compareNames)
+  )].sort((left, right) => left.localeCompare(right))
 }
 
 export function filterWatchlistItems(
@@ -62,5 +56,5 @@ export function groupWatchlistItems(
       displayName: storageName === UNGROUPED_STORAGE_NAME ? ungroupedLabel : storageName,
       items: [...groupItems].sort((left, right) => right.createdAt - left.createdAt),
     }))
-    .sort((left, right) => compareNames(left.displayName, right.displayName))
+    .sort((left, right) => left.displayName.localeCompare(right.displayName))
 }

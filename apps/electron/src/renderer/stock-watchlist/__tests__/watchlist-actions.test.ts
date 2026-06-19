@@ -29,7 +29,7 @@ test('starts research with the selected display symbol, refreshes, and navigates
   const refreshSessions = mock(async () => {})
   const navigateToSession = mock(() => {})
 
-  await startWatchlistResearch({
+  const result = await startWatchlistResearch({
     workspaceId: 'workspace-1',
     item,
     createStockResearchRun,
@@ -42,4 +42,6 @@ test('starts research with the selected display symbol, refreshes, and navigates
   })
   expect(refreshSessions).toHaveBeenCalledWith('session-1')
   expect(navigateToSession).toHaveBeenCalledWith('session-1')
+  expect(result.runId).toBe('run-1')
+  expect(result.sessionId).toBe('session-1')
 })
