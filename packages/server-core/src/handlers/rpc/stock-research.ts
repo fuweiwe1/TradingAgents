@@ -7,6 +7,7 @@ import type {
   SaveStockResearchReportRequest,
   StockResearchReport,
   StockWatchlistItem,
+  UpdateStockWatchlistItemRequest,
 } from '@craft-agent/shared/protocol'
 import {
   buildResearchSessionName,
@@ -21,6 +22,7 @@ export const HANDLED_CHANNELS = [
   RPC_CHANNELS.stockResearch.CREATE_RUN,
   RPC_CHANNELS.stockResearch.ADD_WATCHLIST_ITEM,
   RPC_CHANNELS.stockResearch.LIST_WATCHLIST_ITEMS,
+  RPC_CHANNELS.stockResearch.UPDATE_WATCHLIST_ITEM,
   RPC_CHANNELS.stockResearch.REMOVE_WATCHLIST_ITEM,
   RPC_CHANNELS.stockResearch.SAVE_REPORT,
   RPC_CHANNELS.stockResearch.LIST_REPORTS,
@@ -77,6 +79,18 @@ export function registerStockResearchHandlers(server: RpcServer, deps: HandlerDe
     RPC_CHANNELS.stockResearch.LIST_WATCHLIST_ITEMS,
     async (): Promise<StockWatchlistItem[]> => {
       return requireStockStorage(deps).listWatchlistItems()
+    },
+  )
+
+  server.handle(
+    RPC_CHANNELS.stockResearch.UPDATE_WATCHLIST_ITEM,
+    async (
+      _ctx,
+      _workspaceId: string,
+      id: string,
+      request: UpdateStockWatchlistItemRequest,
+    ): Promise<StockWatchlistItem> => {
+      return requireStockStorage(deps).updateWatchlistItem(id, request)
     },
   )
 

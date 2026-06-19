@@ -603,3 +603,30 @@
 - Known risk/blocker:
   - The branch remains stacked on `codex/stock-002-sqlite-storage`.
   - On this Windows machine, use `init.ps1`; the WSL `/bin/bash` path remains unavailable.
+
+### Session 026
+
+- Date: 2026-06-19
+- Goal: Implement stock-004 Task 2 by wiring the watchlist update RPC and Electron API.
+- Completed:
+  - Re-exported `UpdateStockWatchlistItemRequest` from the shared protocol DTO surface.
+  - Added `stockResearch:updateWatchlistItem` to `RPC_CHANNELS` and the workspace-scoped `REMOTE_ELIGIBLE_CHANNELS`.
+  - Registered the server-core handler and included it in `HANDLED_CHANNELS`; the handler delegates `id` and the unchanged patch request to `stockStorage.updateWatchlistItem`.
+  - Exposed `updateStockWatchlistItem(workspaceId, id, request)` on `ElectronAPI` and mapped it to the new channel.
+  - Extended the RPC harness and IPC channel stability test without weakening routing or registration coverage.
+- TDD evidence:
+  - RED: `bun test packages/server-core/src/handlers/rpc/stock-research.test.ts apps/electron/src/shared/__tests__/ipc-channels.test.ts` failed because the expected channel count was 320 while only 319 existed, the wire string was missing, and the update handler was `undefined`.
+  - GREEN: the four-file focused suite passed with 20 tests and 0 failures; `registration-profiles.test.ts` passed separately with 2 tests and 0 failures.
+  - The exact five-file command was run before and after implementation, but both runs hit the same pre-existing cross-file `registration-profiles.test.ts` timeout/mock-registration pollution. The test passes when isolated; no registration test coverage was changed.
+- Verification:
+  - `bun run typecheck:shared`: passed.
+  - `cd packages/server-core && bun run typecheck`: passed.
+  - `cd apps/electron && bun run typecheck`: passed.
+  - `powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1`: passed.
+  - `git diff --check`: passed with only Windows LF/CRLF warnings.
+- Current progress:
+  - `stock-004` remains `in_progress`; Task 2 is complete and Task 3 is next.
+- Known risk/blocker:
+  - The requested combined five-file Bun test command has a pre-existing test isolation/timing issue in `registration-profiles.test.ts`; isolated registration profile coverage is green.
+  - The branch remains stacked on `codex/stock-002-sqlite-storage`.
+  - On this Windows machine, use `init.ps1`; the WSL `/bin/bash` path remains unavailable.

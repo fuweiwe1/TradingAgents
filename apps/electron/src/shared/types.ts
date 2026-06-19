@@ -218,6 +218,7 @@ import type {
   SaveStockResearchReportRequest,
   StockResearchReport,
   StockWatchlistItem,
+  UpdateStockWatchlistItemRequest,
 } from '@craft-agent/shared/protocol'
 
 export interface ElectronAPI {
@@ -230,6 +231,7 @@ export interface ElectronAPI {
   createStockResearchRun(workspaceId: string, request: CreateStockResearchRunRequest): Promise<CreateStockResearchRunResult>
   addStockWatchlistItem(workspaceId: string, request: AddStockWatchlistItemRequest): Promise<StockWatchlistItem>
   listStockWatchlistItems(workspaceId: string): Promise<StockWatchlistItem[]>
+  updateStockWatchlistItem(workspaceId: string, id: string, request: UpdateStockWatchlistItemRequest): Promise<StockWatchlistItem>
   removeStockWatchlistItem(workspaceId: string, id: string): Promise<RemoveStockWatchlistItemResult>
   saveStockResearchReport(workspaceId: string, request: SaveStockResearchReportRequest): Promise<StockResearchReport>
   listStockResearchReports(workspaceId: string): Promise<StockResearchReport[]>

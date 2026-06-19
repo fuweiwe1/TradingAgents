@@ -26,6 +26,7 @@ export const CHANNEL_MAP = {
   createStockResearchRun: invoke(RPC_CHANNELS.stockResearch.CREATE_RUN),
   addStockWatchlistItem: invoke(RPC_CHANNELS.stockResearch.ADD_WATCHLIST_ITEM),
   listStockWatchlistItems: invoke(RPC_CHANNELS.stockResearch.LIST_WATCHLIST_ITEMS),
+  updateStockWatchlistItem: invoke(RPC_CHANNELS.stockResearch.UPDATE_WATCHLIST_ITEM),
   removeStockWatchlistItem: invoke(RPC_CHANNELS.stockResearch.REMOVE_WATCHLIST_ITEM),
   saveStockResearchReport: invoke(RPC_CHANNELS.stockResearch.SAVE_REPORT),
   listStockResearchReports: invoke(RPC_CHANNELS.stockResearch.LIST_REPORTS),

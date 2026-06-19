@@ -30,6 +30,7 @@ export type {
   SaveStockResearchReportRequest,
   StockResearchReport,
   StockWatchlistItem,
+  UpdateStockWatchlistItemRequest,
 } from '../stock'
 
 // Re-export generateMessageId for handler convenience

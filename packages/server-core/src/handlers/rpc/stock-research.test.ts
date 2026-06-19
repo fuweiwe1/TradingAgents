@@ -55,6 +55,10 @@ function createHarness() {
       calls.push({ method: 'listWatchlistItems', args: [] })
       return storageState.watchlist
     },
+    updateWatchlistItem(id: string, input: unknown) {
+      calls.push({ method: 'updateWatchlistItem', args: [id, input] })
+      return { ...storageState.watchlist[0], ...(input as object) }
+    },
     removeWatchlistItem(id: string) {
       calls.push({ method: 'removeWatchlistItem', args: [id] })
       return true
@@ -86,6 +90,7 @@ function createHarness() {
   if (!createRun) throw new Error('stock research handler not registered')
   const addWatchlistItem = handlers.get(RPC_CHANNELS.stockResearch.ADD_WATCHLIST_ITEM)
   const listWatchlistItems = handlers.get(RPC_CHANNELS.stockResearch.LIST_WATCHLIST_ITEMS)
+  const updateWatchlistItem = handlers.get(RPC_CHANNELS.stockResearch.UPDATE_WATCHLIST_ITEM)
   const removeWatchlistItem = handlers.get(RPC_CHANNELS.stockResearch.REMOVE_WATCHLIST_ITEM)
   const listReports = handlers.get(RPC_CHANNELS.stockResearch.LIST_REPORTS)
   const getReport = handlers.get(RPC_CHANNELS.stockResearch.GET_REPORT)
@@ -93,6 +98,7 @@ function createHarness() {
     createRun,
     addWatchlistItem,
     listWatchlistItems,
+    updateWatchlistItem,
     removeWatchlistItem,
     listReports,
     getReport,
@@ -161,6 +167,7 @@ describe('stock research RPC handlers', () => {
     const {
       addWatchlistItem,
       listWatchlistItems,
+      updateWatchlistItem,
       removeWatchlistItem,
       listReports,
       getReport,
@@ -169,6 +176,7 @@ describe('stock research RPC handlers', () => {
 
     expect(addWatchlistItem).toBeFunction()
     expect(listWatchlistItems).toBeFunction()
+    expect(updateWatchlistItem).toBeFunction()
     expect(removeWatchlistItem).toBeFunction()
     expect(listReports).toBeFunction()
     expect(getReport).toBeFunction()
@@ -186,6 +194,16 @@ describe('stock research RPC handlers', () => {
     await expect(listWatchlistItems!({ clientId: 'client-1', workspaceId: 'workspace-1', webContentsId: null }, 'workspace-1')).resolves.toMatchObject([
       { id: 'watchlist-1', symbol: { displaySymbol: 'AAPL' } },
     ])
+    const updateRequest = {
+      groupName: 'Growth',
+      note: 'Updated thesis',
+    }
+    await expect(updateWatchlistItem!({ clientId: 'client-1', workspaceId: 'workspace-1', webContentsId: null }, 'workspace-1', 'watchlist-1', updateRequest)).resolves.toMatchObject({
+      id: 'watchlist-1',
+      symbol: { displaySymbol: 'AAPL' },
+      groupName: 'Growth',
+      note: 'Updated thesis',
+    })
     await expect(removeWatchlistItem!({ clientId: 'client-1', workspaceId: 'workspace-1', webContentsId: null }, 'workspace-1', 'watchlist-1')).resolves.toEqual({ success: true })
     await expect(listReports!({ clientId: 'client-1', workspaceId: 'workspace-1', webContentsId: null }, 'workspace-1')).resolves.toMatchObject([
       { id: 'report-1', title: 'AAPL Research Report' },
@@ -197,6 +215,10 @@ describe('stock research RPC handlers', () => {
 
     expect(calls.map((call) => call.method)).toContain('addWatchlistItem')
     expect(calls.map((call) => call.method)).toContain('listWatchlistItems')
+    expect(calls).toContainEqual({
+      method: 'updateWatchlistItem',
+      args: ['watchlist-1', updateRequest],
+    })
     expect(calls.map((call) => call.method)).toContain('removeWatchlistItem')
     expect(calls.map((call) => call.method)).toContain('listResearchReports')
     expect(calls.map((call) => call.method)).toContain('getResearchReport')

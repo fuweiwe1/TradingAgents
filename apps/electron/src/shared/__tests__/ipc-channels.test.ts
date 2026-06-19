@@ -274,6 +274,7 @@ const EXPECTED_CHANNELS: string[] = [
   'stockResearch:listWatchlistItems',
   'stockResearch:removeWatchlistItem',
   'stockResearch:saveReport',
+  'stockResearch:updateWatchlistItem',
   'system:homeDir',
   'system:isDebugMode',
   'system:versions',
