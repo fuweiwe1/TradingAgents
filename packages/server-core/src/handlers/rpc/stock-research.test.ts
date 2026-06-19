@@ -57,7 +57,7 @@ function createHarness() {
     },
     updateWatchlistItem(id: string, input: unknown) {
       calls.push({ method: 'updateWatchlistItem', args: [id, input] })
-      return { ...storageState.watchlist[0], ...(input as object) }
+      return { ...storageState.watchlist[0], id, ...(input as object) }
     },
     removeWatchlistItem(id: string) {
       calls.push({ method: 'removeWatchlistItem', args: [id] })
