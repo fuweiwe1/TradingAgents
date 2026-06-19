@@ -92,6 +92,9 @@ export const routes = {
   // View Routes - Compound sidebar/navigator/details routes
   // ============================================
   view: {
+    /** StockCraft watchlist */
+    watchlist: () => 'watchlist' as const,
+
     /** StockCraft reports center */
     reports: () => 'reports' as const,
 

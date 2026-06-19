@@ -877,6 +877,15 @@ export interface ReportsNavigationState {
 }
 
 /**
+ * Watchlist navigation state
+ */
+export interface WatchlistNavigationState {
+  navigator: 'watchlist'
+  details: null
+  rightSidebar?: RightSidebarPanel
+}
+
+/**
  * Unified navigation state
  */
 export type NavigationState =
@@ -886,6 +895,7 @@ export type NavigationState =
   | SkillsNavigationState
   | AutomationsNavigationState
   | ReportsNavigationState
+  | WatchlistNavigationState
 
 export const isSessionsNavigation = (
   state: NavigationState
@@ -911,6 +921,10 @@ export const isReportsNavigation = (
   state: NavigationState
 ): state is ReportsNavigationState => state.navigator === 'reports'
 
+export const isWatchlistNavigation = (
+  state: NavigationState
+): state is WatchlistNavigationState => state.navigator === 'watchlist'
+
 export const DEFAULT_NAVIGATION_STATE: NavigationState = {
   navigator: 'sessions',
   filter: { kind: 'allSessions' },
@@ -918,6 +932,9 @@ export const DEFAULT_NAVIGATION_STATE: NavigationState = {
 }
 
 export const getNavigationStateKey = (state: NavigationState): string => {
+  if (state.navigator === 'watchlist') {
+    return 'watchlist'
+  }
   if (state.navigator === 'reports') {
     return 'reports'
   }
@@ -957,6 +974,9 @@ export const getNavigationStateKey = (state: NavigationState): string => {
 }
 
 export const parseNavigationStateKey = (key: string): NavigationState | null => {
+  // Handle watchlist
+  if (key === 'watchlist') return { navigator: 'watchlist', details: null }
+
   // Handle reports
   if (key === 'reports') return { navigator: 'reports', details: null }
 
