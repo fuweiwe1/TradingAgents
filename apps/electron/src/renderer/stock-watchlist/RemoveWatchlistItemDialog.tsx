@@ -37,7 +37,7 @@ export function RemoveWatchlistItemDialog({
     dialogStateVersionRef.current += 1
     setSubmitting(false)
     setError(null)
-  }, [open, item?.id])
+  }, [open, item])
 
   const handleRemove = React.useCallback(async () => {
     if (submitting || !item) return
