@@ -36,14 +36,22 @@ export function RemoveWatchlistItemDialog({
     version: 0,
   })
   const [submitting, setSubmitting] = React.useState(false)
+  const submittingRef = React.useRef(submitting)
   const [error, setError] = React.useState<string | null>(null)
 
-  const handleOpenChange = React.useCallback((nextOpen: boolean) => {
-    if (submitting && !nextOpen) return
-    onOpenChange(nextOpen)
-  }, [onOpenChange, submitting])
+  React.useLayoutEffect(() => {
+    submittingRef.current = submitting
+  }, [submitting])
 
-  useRegisterModal(open, () => handleOpenChange(false))
+  const handleOpenChange = React.useCallback((nextOpen: boolean) => {
+    if (submittingRef.current && !nextOpen) return
+    onOpenChange(nextOpen)
+  }, [onOpenChange])
+  const handleRegisteredClose = React.useCallback(() => {
+    handleOpenChange(false)
+  }, [handleOpenChange])
+
+  useRegisterModal(open, handleRegisteredClose)
 
   React.useLayoutEffect(() => {
     const requestContext = requestContextRef.current
@@ -118,7 +126,7 @@ export function RemoveWatchlistItemDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[420px]">
+      <DialogContent className="sm:max-w-[420px]" showCloseButton={!submitting}>
         <DialogHeader>
           <DialogTitle>Remove from Watchlist</DialogTitle>
           <DialogDescription>

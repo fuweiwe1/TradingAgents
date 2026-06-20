@@ -40,14 +40,22 @@ export function AddWatchlistItemDialog({
   const [groupName, setGroupName] = React.useState('')
   const [note, setNote] = React.useState('')
   const [submitting, setSubmitting] = React.useState(false)
+  const submittingRef = React.useRef(submitting)
   const [error, setError] = React.useState<string | null>(null)
 
-  const handleOpenChange = React.useCallback((nextOpen: boolean) => {
-    if (submitting && !nextOpen) return
-    onOpenChange(nextOpen)
-  }, [onOpenChange, submitting])
+  React.useLayoutEffect(() => {
+    submittingRef.current = submitting
+  }, [submitting])
 
-  useRegisterModal(open, () => handleOpenChange(false))
+  const handleOpenChange = React.useCallback((nextOpen: boolean) => {
+    if (submittingRef.current && !nextOpen) return
+    onOpenChange(nextOpen)
+  }, [onOpenChange])
+  const handleRegisteredClose = React.useCallback(() => {
+    handleOpenChange(false)
+  }, [handleOpenChange])
+
+  useRegisterModal(open, handleRegisteredClose)
 
   React.useLayoutEffect(() => {
     const requestContext = requestContextRef.current
@@ -126,7 +134,7 @@ export function AddWatchlistItemDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[440px]">
+      <DialogContent className="sm:max-w-[440px]" showCloseButton={!submitting}>
         <form className="grid gap-4" onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>Add to Watchlist</DialogTitle>
