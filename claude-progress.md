@@ -637,3 +637,30 @@
 - Known risk/blocker:
   - The branch remains stacked on the combined `codex/stock-002-sqlite-storage` history.
   - On this Windows machine, use `init.ps1`; the WSL `/bin/bash` path remains unavailable.
+
+### Session 027
+
+- Date: 2026-06-20
+- Goal: Locally merge the completed Watchlist branch into `codex/stock-002-sqlite-storage`.
+- Completed:
+  - Confirmed `codex/stock-002-sqlite-storage` is an ancestor of `codex/stock-004-watchlist` and both worktrees were clean before integration.
+  - Switched to `codex/stock-002-sqlite-storage` and fast-forward merged `codex/stock-004-watchlist` from `d286ca8` to `ccd443f` with no conflicts.
+  - Kept the feature branch intact; no push or branch deletion was requested.
+  - Investigated the post-checkout locale sorted-check failure: all locale blob hashes matched the index and the apparent drift was caused by Windows CRLF checkout versus the formatter's LF output. Running the standard sorter produced no staged content diff and restored a clean index.
+- Verification on the merged target branch:
+  - Core focused suite: 70 tests, 0 failures, 487 expectations.
+  - Registration suite in isolated process: 4 tests, 0 failures, 8 expectations.
+  - `bun run typecheck:shared`: passed.
+  - `cd packages/server-core; bun run typecheck`: passed.
+  - `cd apps/electron; bun run typecheck`: passed.
+  - `powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1`: passed.
+  - `bun run lint:i18n:sorted`: passed after normalizing working-tree line endings with `bun run sort-locales`; Git confirmed no actual locale content diff.
+  - `bun run lint:i18n:parity`: passed with 6 locales and 1484 keys each.
+  - `python -m json.tool feature_list.json` and `git diff --check`: passed after this record update.
+- Current progress:
+  - Current branch: `codex/stock-002-sqlite-storage`.
+  - `stock-001` through `stock-004` are locally integrated and marked passing.
+  - The combined target branch has not been pushed in this session.
+- Known risk/blocker:
+  - The local target branch is ahead of `origin/codex/stock-002-sqlite-storage`; the user will push manually if desired.
+  - On this Windows machine, use `init.ps1`; the WSL `/bin/bash` path remains unavailable.
