@@ -27,17 +27,22 @@ export function RemoveWatchlistItemDialog({
   onOpenChange,
   onRemoved,
 }: RemoveWatchlistItemDialogProps) {
-  useRegisterModal(open, () => onOpenChange(false))
-
   const dialogStateVersionRef = React.useRef(0)
   const [submitting, setSubmitting] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
+
+  const handleOpenChange = React.useCallback((nextOpen: boolean) => {
+    if (submitting && !nextOpen) return
+    onOpenChange(nextOpen)
+  }, [onOpenChange, submitting])
+
+  useRegisterModal(open, () => handleOpenChange(false))
 
   React.useEffect(() => {
     dialogStateVersionRef.current += 1
     setSubmitting(false)
     setError(null)
-  }, [open, item])
+  }, [open, workspaceId, item?.id])
 
   const handleRemove = React.useCallback(async () => {
     if (submitting || !item) return
@@ -46,6 +51,7 @@ export function RemoveWatchlistItemDialog({
     const dialogStateVersion = dialogStateVersionRef.current
     setSubmitting(true)
     setError(null)
+
     try {
       const result = await window.electronAPI.removeStockWatchlistItem(
         workspaceId,
@@ -54,10 +60,6 @@ export function RemoveWatchlistItemDialog({
       if (!result.success) {
         throw new Error('Failed to remove watchlist item.')
       }
-      onRemoved(itemId)
-      if (dialogStateVersionRef.current === dialogStateVersion) {
-        onOpenChange(false)
-      }
     } catch (removeError) {
       if (dialogStateVersionRef.current === dialogStateVersion) {
         setError(
@@ -65,16 +67,23 @@ export function RemoveWatchlistItemDialog({
             ? removeError.message
             : 'Failed to remove watchlist item.',
         )
-      }
-    } finally {
-      if (dialogStateVersionRef.current === dialogStateVersion) {
         setSubmitting(false)
       }
+      return
+    }
+
+    if (dialogStateVersionRef.current !== dialogStateVersion) return
+
+    setSubmitting(false)
+    try {
+      onRemoved(itemId)
+    } finally {
+      onOpenChange(false)
     }
   }, [item, onOpenChange, onRemoved, submitting, workspaceId])
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[420px]">
         <DialogHeader>
           <DialogTitle>Remove from Watchlist</DialogTitle>
@@ -93,7 +102,7 @@ export function RemoveWatchlistItemDialog({
           <Button
             type="button"
             variant="ghost"
-            onClick={() => onOpenChange(false)}
+            onClick={() => handleOpenChange(false)}
             disabled={submitting}
           >
             Cancel

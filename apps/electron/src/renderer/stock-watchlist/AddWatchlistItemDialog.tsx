@@ -29,12 +29,11 @@ export function AddWatchlistItemDialog({
   onOpenChange,
   onAdded,
 }: AddWatchlistItemDialogProps) {
-  useRegisterModal(open, () => onOpenChange(false))
-
   const symbolInputRef = React.useRef<HTMLInputElement>(null)
   const dialogStateVersionRef = React.useRef(0)
   const symbolId = React.useId()
   const groupId = React.useId()
+  const groupOptionsId = React.useId()
   const noteId = React.useId()
   const [symbol, setSymbol] = React.useState('')
   const [groupName, setGroupName] = React.useState('')
@@ -42,21 +41,28 @@ export function AddWatchlistItemDialog({
   const [submitting, setSubmitting] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
 
+  const handleOpenChange = React.useCallback((nextOpen: boolean) => {
+    if (submitting && !nextOpen) return
+    onOpenChange(nextOpen)
+  }, [onOpenChange, submitting])
+
+  useRegisterModal(open, () => handleOpenChange(false))
+
   React.useEffect(() => {
     dialogStateVersionRef.current += 1
+    setSubmitting(false)
+    setError(null)
 
     if (!open) {
       setSymbol('')
       setGroupName('')
       setNote('')
-      setSubmitting(false)
-      setError(null)
       return
     }
 
     const timeoutId = window.setTimeout(() => symbolInputRef.current?.focus(), 0)
     return () => window.clearTimeout(timeoutId)
-  }, [open])
+  }, [open, workspaceId])
 
   const handleSubmit = React.useCallback(async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -65,16 +71,14 @@ export function AddWatchlistItemDialog({
     const dialogStateVersion = dialogStateVersionRef.current
     setSubmitting(true)
     setError(null)
+
+    let item: StockWatchlistItem
     try {
-      const item = await window.electronAPI.addStockWatchlistItem(workspaceId, {
+      item = await window.electronAPI.addStockWatchlistItem(workspaceId, {
         symbol: symbol.trim(),
         groupName: groupName.trim() || null,
         note: note.trim() || null,
       })
-      onAdded(item)
-      if (dialogStateVersionRef.current === dialogStateVersion) {
-        onOpenChange(false)
-      }
     } catch (submitError) {
       if (dialogStateVersionRef.current === dialogStateVersion) {
         setError(
@@ -82,16 +86,23 @@ export function AddWatchlistItemDialog({
             ? submitError.message
             : 'Failed to add watchlist item.',
         )
-      }
-    } finally {
-      if (dialogStateVersionRef.current === dialogStateVersion) {
         setSubmitting(false)
       }
+      return
+    }
+
+    if (dialogStateVersionRef.current !== dialogStateVersion) return
+
+    setSubmitting(false)
+    try {
+      onAdded(item)
+    } finally {
+      onOpenChange(false)
     }
   }, [groupName, note, onAdded, onOpenChange, submitting, symbol, workspaceId])
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[440px]">
         <form className="grid gap-4" onSubmit={handleSubmit}>
           <DialogHeader>
@@ -124,7 +135,7 @@ export function AddWatchlistItemDialog({
             </label>
             <Input
               id={groupId}
-              list="watchlist-group-options"
+              list={groupOptionsId}
               value={groupName}
               onChange={(event) => {
                 setGroupName(event.target.value)
@@ -133,7 +144,7 @@ export function AddWatchlistItemDialog({
               placeholder="Select or type a group"
               disabled={submitting}
             />
-            <datalist id="watchlist-group-options">
+            <datalist id={groupOptionsId}>
               {groupOptions.map((group) => (
                 <option key={group} value={group} />
               ))}
@@ -166,7 +177,7 @@ export function AddWatchlistItemDialog({
             <Button
               type="button"
               variant="ghost"
-              onClick={() => onOpenChange(false)}
+              onClick={() => handleOpenChange(false)}
               disabled={submitting}
             >
               Cancel
