@@ -27,7 +27,27 @@ export function RemoveWatchlistItemDialog({
   onOpenChange,
   onRemoved,
 }: RemoveWatchlistItemDialogProps) {
-  const dialogStateVersionRef = React.useRef(0)
+  const mountedRef = React.useRef(true)
+  const itemId = item?.id ?? null
+  const requestContextRef = React.useRef({
+    open,
+    workspaceId,
+    itemId,
+    version: 0,
+  })
+  const requestContext = requestContextRef.current
+  if (
+    requestContext.open !== open
+    || requestContext.workspaceId !== workspaceId
+    || requestContext.itemId !== itemId
+  ) {
+    requestContextRef.current = {
+      open,
+      workspaceId,
+      itemId,
+      version: requestContext.version + 1,
+    }
+  }
   const [submitting, setSubmitting] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
 
@@ -39,7 +59,13 @@ export function RemoveWatchlistItemDialog({
   useRegisterModal(open, () => handleOpenChange(false))
 
   React.useEffect(() => {
-    dialogStateVersionRef.current += 1
+    mountedRef.current = true
+    return () => {
+      mountedRef.current = false
+    }
+  }, [])
+
+  React.useEffect(() => {
     setSubmitting(false)
     setError(null)
   }, [open, workspaceId, item?.id])
@@ -47,21 +73,26 @@ export function RemoveWatchlistItemDialog({
   const handleRemove = React.useCallback(async () => {
     if (submitting || !item) return
 
-    const itemId = item.id
-    const dialogStateVersion = dialogStateVersionRef.current
+    const removingItemId = item.id
+    const requestVersion = requestContextRef.current.version
+    const isCurrentRequest = () => (
+      mountedRef.current
+      && requestContextRef.current.version === requestVersion
+      && requestContextRef.current.open
+    )
     setSubmitting(true)
     setError(null)
 
     try {
       const result = await window.electronAPI.removeStockWatchlistItem(
         workspaceId,
-        itemId,
+        removingItemId,
       )
       if (!result.success) {
         throw new Error('Failed to remove watchlist item.')
       }
     } catch (removeError) {
-      if (dialogStateVersionRef.current === dialogStateVersion) {
+      if (isCurrentRequest()) {
         setError(
           removeError instanceof Error
             ? removeError.message
@@ -72,11 +103,11 @@ export function RemoveWatchlistItemDialog({
       return
     }
 
-    if (dialogStateVersionRef.current !== dialogStateVersion) return
+    if (!isCurrentRequest()) return
 
     setSubmitting(false)
     try {
-      onRemoved(itemId)
+      onRemoved(removingItemId)
     } finally {
       onOpenChange(false)
     }

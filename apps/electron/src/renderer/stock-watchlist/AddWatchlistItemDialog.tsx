@@ -30,7 +30,16 @@ export function AddWatchlistItemDialog({
   onAdded,
 }: AddWatchlistItemDialogProps) {
   const symbolInputRef = React.useRef<HTMLInputElement>(null)
-  const dialogStateVersionRef = React.useRef(0)
+  const mountedRef = React.useRef(true)
+  const requestContextRef = React.useRef({ open, workspaceId, version: 0 })
+  const requestContext = requestContextRef.current
+  if (requestContext.open !== open || requestContext.workspaceId !== workspaceId) {
+    requestContextRef.current = {
+      open,
+      workspaceId,
+      version: requestContext.version + 1,
+    }
+  }
   const symbolId = React.useId()
   const groupId = React.useId()
   const groupOptionsId = React.useId()
@@ -49,7 +58,13 @@ export function AddWatchlistItemDialog({
   useRegisterModal(open, () => handleOpenChange(false))
 
   React.useEffect(() => {
-    dialogStateVersionRef.current += 1
+    mountedRef.current = true
+    return () => {
+      mountedRef.current = false
+    }
+  }, [])
+
+  React.useEffect(() => {
     setSubmitting(false)
     setError(null)
 
@@ -68,7 +83,12 @@ export function AddWatchlistItemDialog({
     event.preventDefault()
     if (submitting || !symbol.trim()) return
 
-    const dialogStateVersion = dialogStateVersionRef.current
+    const requestVersion = requestContextRef.current.version
+    const isCurrentRequest = () => (
+      mountedRef.current
+      && requestContextRef.current.version === requestVersion
+      && requestContextRef.current.open
+    )
     setSubmitting(true)
     setError(null)
 
@@ -80,7 +100,7 @@ export function AddWatchlistItemDialog({
         note: note.trim() || null,
       })
     } catch (submitError) {
-      if (dialogStateVersionRef.current === dialogStateVersion) {
+      if (isCurrentRequest()) {
         setError(
           submitError instanceof Error
             ? submitError.message
@@ -91,7 +111,7 @@ export function AddWatchlistItemDialog({
       return
     }
 
-    if (dialogStateVersionRef.current !== dialogStateVersion) return
+    if (!isCurrentRequest()) return
 
     setSubmitting(false)
     try {
