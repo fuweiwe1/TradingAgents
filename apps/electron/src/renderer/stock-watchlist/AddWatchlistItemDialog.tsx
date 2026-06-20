@@ -32,14 +32,6 @@ export function AddWatchlistItemDialog({
   const symbolInputRef = React.useRef<HTMLInputElement>(null)
   const mountedRef = React.useRef(true)
   const requestContextRef = React.useRef({ open, workspaceId, version: 0 })
-  const requestContext = requestContextRef.current
-  if (requestContext.open !== open || requestContext.workspaceId !== workspaceId) {
-    requestContextRef.current = {
-      open,
-      workspaceId,
-      version: requestContext.version + 1,
-    }
-  }
   const symbolId = React.useId()
   const groupId = React.useId()
   const groupOptionsId = React.useId()
@@ -57,7 +49,18 @@ export function AddWatchlistItemDialog({
 
   useRegisterModal(open, () => handleOpenChange(false))
 
-  React.useEffect(() => {
+  React.useLayoutEffect(() => {
+    const requestContext = requestContextRef.current
+    if (requestContext.open !== open || requestContext.workspaceId !== workspaceId) {
+      requestContextRef.current = {
+        open,
+        workspaceId,
+        version: requestContext.version + 1,
+      }
+    }
+  }, [open, workspaceId])
+
+  React.useLayoutEffect(() => {
     mountedRef.current = true
     return () => {
       mountedRef.current = false
