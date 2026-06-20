@@ -603,3 +603,37 @@
 - Known risk/blocker:
   - The branch remains stacked on `codex/stock-002-sqlite-storage`.
   - On this Windows machine, use `init.ps1`; the WSL `/bin/bash` path remains unavailable.
+
+### Session 026
+
+- Date: 2026-06-20
+- Goal: Complete `stock-004`, the lightweight Watchlist, including implementation review, final verification, and persistent records.
+- Completed:
+  - Implemented atomic watchlist item updates with duplicate symbol/group conflict protection and wired `stockResearch:updateWatchlistItem` through shared protocol, server-core, ElectronAPI, and channel mapping.
+  - Added tested renderer helpers for grouping, filtering, deterministic selection, dirty state, research launch, domain error classification, and stale request generations.
+  - Added the top-level `watchlist` route, navigation history support, keyboard/sidebar entry, and standalone two-pane `WatchlistPage`.
+  - Added workspace-safe loading and A→B→A stale-result guards for list, save, research, session refresh, and navigation operations.
+  - Added add/remove dialogs with submission-close guards, localized conflict/not-found behavior, app-language date formatting, pluralized counts, and complete translations across all locale files.
+  - Completed spec review and code-quality review fixes; Task 6 implementation commit is `b4d3ea4 Add stock watchlist page`.
+  - Marked `stock-004` as `passing`; all features currently listed in `feature_list.json` are now passing.
+- Verification:
+  - Non-registration focused suite passed: 70 tests, 0 failures, 487 expectations.
+  - Registration coverage passed in an isolated process: `registration.test.ts` + `registration-profiles.test.ts`, 4 tests, 0 failures. When included in the large parallel Bun invocation, the profile test shared mock registration state across files and produced a timeout/cross-profile false negative; isolation consistently passed and the Watchlist page commit does not modify registration code.
+  - `bun run typecheck:shared`: passed.
+  - `cd packages/server-core; bun run typecheck`: passed.
+  - `cd apps/electron; bun run typecheck`: passed.
+  - `powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1`: passed.
+  - `bun run lint:i18n:sorted`: passed.
+  - `bun run lint:i18n:parity`: passed with 6 locales and 1484 keys each.
+  - `python -m json.tool feature_list.json`: passed after final record edits.
+  - `git diff --check`: passed after final record edits.
+- Browser smoke note:
+  - The Vite renderer server returned HTTP 200 at `http://127.0.0.1:56072/`.
+  - A normal browser tab cannot provide the Electron preload/API, so the Electron renderer remained at its initial shell and could not serve as an end-to-end product test. No visual-pass claim is made; the repository's approved page-wiring strategy uses focused tests, Electron typecheck, and the standard startup entry rather than adding a new DOM harness.
+- Current progress:
+  - `stock-004` is `passing` on branch `codex/stock-004-watchlist`.
+  - The branch is 17 commits ahead of cached `origin/codex/stock-002-sqlite-storage` and has not been pushed in this session.
+  - No additional not-started feature remains in `feature_list.json`; the next action is branch handoff (push/merge/PR choice) or defining the next product feature.
+- Known risk/blocker:
+  - The branch remains stacked on the combined `codex/stock-002-sqlite-storage` history.
+  - On this Windows machine, use `init.ps1`; the WSL `/bin/bash` path remains unavailable.
