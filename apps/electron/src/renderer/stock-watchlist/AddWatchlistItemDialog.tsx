@@ -1,4 +1,5 @@
 import * as React from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -29,6 +30,7 @@ export function AddWatchlistItemDialog({
   onOpenChange,
   onAdded,
 }: AddWatchlistItemDialogProps) {
+  const { t } = useTranslation()
   const symbolInputRef = React.useRef<HTMLInputElement>(null)
   const mountedRef = React.useRef(true)
   const requestContextRef = React.useRef({ open, workspaceId, version: 0 })
@@ -115,7 +117,7 @@ export function AddWatchlistItemDialog({
         setError(
           submitError instanceof Error
             ? submitError.message
-            : 'Failed to add watchlist item.',
+            : t('watchlist.addError'),
         )
         setSubmitting(false)
       }
@@ -130,22 +132,22 @@ export function AddWatchlistItemDialog({
     } finally {
       onOpenChange(false)
     }
-  }, [groupName, note, onAdded, onOpenChange, submitting, symbol, workspaceId])
+  }, [groupName, note, onAdded, onOpenChange, submitting, symbol, t, workspaceId])
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[440px]" showCloseButton={!submitting}>
         <form className="grid gap-4" onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Add to Watchlist</DialogTitle>
+            <DialogTitle>{t('watchlist.addTitle')}</DialogTitle>
             <DialogDescription>
-              Add an A-share, Hong Kong, or US stock.
+              {t('watchlist.addDescription')}
             </DialogDescription>
           </DialogHeader>
 
           <div className="grid gap-2">
             <label htmlFor={symbolId} className="text-sm font-medium">
-              Stock symbol
+              {t('watchlist.symbol')}
             </label>
             <Input
               ref={symbolInputRef}
@@ -162,7 +164,7 @@ export function AddWatchlistItemDialog({
 
           <div className="grid gap-2">
             <label htmlFor={groupId} className="text-sm font-medium">
-              Group
+              {t('watchlist.group')}
             </label>
             <Input
               id={groupId}
@@ -172,7 +174,7 @@ export function AddWatchlistItemDialog({
                 setGroupName(event.target.value)
                 if (error) setError(null)
               }}
-              placeholder="Select or type a group"
+              placeholder={t('watchlist.groupPlaceholder')}
               disabled={submitting}
             />
             <datalist id={groupOptionsId}>
@@ -184,7 +186,7 @@ export function AddWatchlistItemDialog({
 
           <div className="grid gap-2">
             <label htmlFor={noteId} className="text-sm font-medium">
-              Note
+              {t('watchlist.note')}
             </label>
             <Textarea
               id={noteId}
@@ -193,7 +195,7 @@ export function AddWatchlistItemDialog({
                 setNote(event.target.value)
                 if (error) setError(null)
               }}
-              placeholder="Optional research note"
+              placeholder={t('watchlist.notePlaceholder')}
               disabled={submitting}
             />
           </div>
@@ -211,10 +213,10 @@ export function AddWatchlistItemDialog({
               onClick={() => handleOpenChange(false)}
               disabled={submitting}
             >
-              Cancel
+              {t('watchlist.cancel')}
             </Button>
             <Button type="submit" disabled={submitting || !symbol.trim()}>
-              {submitting ? 'Adding...' : 'Add'}
+              {submitting ? t('watchlist.adding') : t('watchlist.add')}
             </Button>
           </DialogFooter>
         </form>

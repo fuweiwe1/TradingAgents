@@ -1,4 +1,5 @@
 import * as React from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -27,6 +28,7 @@ export function RemoveWatchlistItemDialog({
   onOpenChange,
   onRemoved,
 }: RemoveWatchlistItemDialogProps) {
+  const { t } = useTranslation()
   const mountedRef = React.useRef(true)
   const itemId = item?.id ?? null
   const requestContextRef = React.useRef({
@@ -100,14 +102,14 @@ export function RemoveWatchlistItemDialog({
         removingItemId,
       )
       if (!result.success) {
-        throw new Error('Failed to remove watchlist item.')
+        throw new Error(t('watchlist.removeError'))
       }
     } catch (removeError) {
       if (isCurrentRequest()) {
         setError(
           removeError instanceof Error
             ? removeError.message
-            : 'Failed to remove watchlist item.',
+            : t('watchlist.removeError'),
         )
         setSubmitting(false)
       }
@@ -122,15 +124,17 @@ export function RemoveWatchlistItemDialog({
     } finally {
       onOpenChange(false)
     }
-  }, [item, onOpenChange, onRemoved, submitting, workspaceId])
+  }, [item, onOpenChange, onRemoved, submitting, t, workspaceId])
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[420px]" showCloseButton={!submitting}>
         <DialogHeader>
-          <DialogTitle>Remove from Watchlist</DialogTitle>
+          <DialogTitle>{t('watchlist.removeTitle')}</DialogTitle>
           <DialogDescription>
-            Remove {item?.symbol.displaySymbol ?? 'this stock'} from your watchlist?
+            {t('watchlist.confirmRemove', {
+              symbol: item?.symbol.displaySymbol ?? t('watchlist.thisStock'),
+            })}
           </DialogDescription>
         </DialogHeader>
 
@@ -147,7 +151,7 @@ export function RemoveWatchlistItemDialog({
             onClick={() => handleOpenChange(false)}
             disabled={submitting}
           >
-            Cancel
+            {t('watchlist.cancel')}
           </Button>
           <Button
             type="button"
@@ -155,7 +159,7 @@ export function RemoveWatchlistItemDialog({
             onClick={handleRemove}
             disabled={submitting || !item}
           >
-            {submitting ? 'Removing...' : 'Remove'}
+            {submitting ? t('watchlist.removing') : t('watchlist.remove')}
           </Button>
         </DialogFooter>
       </DialogContent>
