@@ -232,9 +232,10 @@
         "2026-06-21: 已新增 getRunBySession/retryPersistence RPC 和 ElectronAPI 接线；保存失败在研究会话显示重试入口，重试先解析现有回复，仍无效时后台请求原 session 重新生成规范报告。",
         "2026-06-21: Electron 与 headless server 均完成自动持久化协调器接线；旧 saveReport RPC 也按 run 幂等更新，避免唯一索引兼容性回归。",
         "2026-06-21: 最终 focused suite 通过 73 tests、0 failures、517 expectations；registration 与 registration-profiles 分文件通过 4 tests、0 failures。",
-        "2026-06-21: bun run typecheck:shared、packages/server-core typecheck、apps/electron typecheck、packages/server typecheck、init.ps1、lint:i18n:sorted、lint:i18n:parity（6 locales，1488 keys）、JSON 和 diff 检查全部通过。"
+        "2026-06-21: bun run typecheck:shared、packages/server-core typecheck、apps/electron typecheck、packages/server typecheck、init.ps1、lint:i18n:sorted、lint:i18n:parity（6 locales，1488 keys）、JSON 和 diff 检查全部通过。",
+        "2026-06-21: codex/stock-005-auto-persistence 已快进合并到本地 main（fcad437）；合并后 73 个 focused tests、4 个分离注册测试、四组 typecheck、启动和 i18n 校验通过。"
       ],
-      "notes": "stock-005 已完成并通过验收。StockCraft v1 的研究闭环现在覆盖：创建 run、执行五步研究、自动持久化步骤和报告、Reports 查看，以及保存失败后的可见重试/重新生成恢复。"
+      "notes": "stock-005 已完成并通过验收，并已本地合并到 main。StockCraft v1 的研究闭环现在覆盖：创建 run、执行五步研究、自动持久化步骤和报告、Reports 查看，以及保存失败后的可见重试/重新生成恢复。"
     }
   ]
 }

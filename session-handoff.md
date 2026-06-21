@@ -3,10 +3,9 @@
 ## Current state
 
 - Repository: `C:\craft_agents`
-- Current branch: `codex/stock-005-auto-persistence`
-- Worktree: `C:\craft_agents\.worktrees\stock-005-auto-persistence`
-- Base branch: `main` at `c650775`
-- Latest implementation commit before final records: `540d245`
+- Current branch: `main`
+- Integrated StockCraft v1 commit: `fcad437`
+- Local `main` has not been pushed after the stock-005 integration.
 - All features in `feature_list.json`, including `stock-005`, are `passing`.
 
 ## Completed product scope
@@ -33,5 +32,5 @@
 
 ## Next action
 
-1. Finish the feature branch: merge locally, push/open a PR, or keep it for later.
-2. After integration, StockCraft v1 has no remaining feature-list gap.
+1. Push local `main` to `origin/main`.
+2. After pushing, StockCraft v1 has no remaining feature-list gap.

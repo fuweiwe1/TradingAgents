@@ -790,3 +790,29 @@
 - Known risk/blocker:
   - Registration coverage files can still exceed their 5-second timeout and contaminate shared mock state when run concurrently with heavy typechecks; each file passes consistently in its own process.
   - On this Windows machine, `bash ./init.sh` remains unavailable because the WSL `/bin/bash` path is missing; use `init.ps1`.
+
+### Session 032
+
+- Date: 2026-06-21
+- Goal: Locally merge the completed automatic persistence feature into `main`.
+- Completed:
+  - Confirmed local `main` matched `origin/main` before integration.
+  - Fast-forward merged `codex/stock-005-auto-persistence` into local `main` at `fcad437`; no conflicts occurred.
+  - Re-ran post-merge verification on `main`.
+  - Removed the owned worktree at `C:\craft_agents\.worktrees\stock-005-auto-persistence`, pruned its Git registration, and deleted the merged local feature branch.
+  - Did not push `main`; the user requested the push command for manual execution.
+- Post-merge verification:
+  - Focused suite: 73 tests, 0 failures, 517 expectations.
+  - `registration.test.ts`: 2 tests, 0 failures after warm standalone rerun.
+  - `registration-profiles.test.ts`: 2 tests, 0 failures.
+  - shared, server-core, Electron, and headless server typechecks: passed.
+  - `init.ps1`: passed.
+  - i18n sorted/parity: passed with 6 locales and 1488 keys each.
+  - `feature_list.json` and `git diff --check`: passed before this record update.
+- Current progress:
+  - Current branch: `main`.
+  - All listed StockCraft v1 features are integrated locally and marked `passing`.
+  - Local `main` has not been pushed.
+- Known risk/blocker:
+  - The first cold standalone registration test on the main checkout took over 30 seconds and exceeded its fixed 5-second timeout; an immediate standalone rerun passed in 1.47 seconds. This remains a test-harness cold-start issue, not a product failure.
+  - On this Windows machine, use `init.ps1`; the WSL `/bin/bash` path remains unavailable.
