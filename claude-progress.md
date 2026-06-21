@@ -816,3 +816,32 @@
 - Known risk/blocker:
   - The first cold standalone registration test on the main checkout took over 30 seconds and exceeded its fixed 5-second timeout; an immediate standalone rerun passed in 1.47 seconds. This remains a test-harness cold-start issue, not a product failure.
   - On this Windows machine, use `init.ps1`; the WSL `/bin/bash` path remains unavailable.
+
+### Session 033
+
+- Date: 2026-06-21
+- Goal: Fix `bun run electron:dev` failing to bundle `bun:sqlite`.
+- Root cause:
+  - `StockStorageService` directly imported Bun's `bun:sqlite`, but the Electron main process is bundled for and executed by Electron 39's Node 22.21.1 runtime.
+  - Marking `bun:sqlite` external would only move the failure from build time to app startup because Electron cannot load Bun built-ins.
+- Completed:
+  - Extracted the existing storage SQL and behavior into runtime-neutral `StockStorageServiceBase`.
+  - Added a Bun adapter at `@craft-agent/server-core/stock/bun` for the standalone headless server and existing Bun tests.
+  - Added a Node adapter at `@craft-agent/server-core/stock/node` using `node:sqlite` for Electron.
+  - Updated Electron and headless server composition roots to select the correct adapter.
+- Verification:
+  - Initial regression: `cd apps/electron; bun run build:main:win` failed on unresolved `bun:sqlite`.
+  - Focused suite passed: 25 tests, 0 failures, 97 expectations.
+  - `bun run typecheck:shared`, server-core typecheck, Electron typecheck, and headless server typecheck passed.
+  - `cd apps/electron; bun run build:main:win` passed and produced `dist/main.cjs`.
+  - Electron runtime smoke under Node 22.21.1 created the five-table schema with `node:sqlite` and inserted/listed an AAPL watchlist item.
+  - `bun run electron:dev` reached `App initialized successfully`, created the workspace window, connected the renderer RPC client, and was then shut down cleanly.
+  - `powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1` passed.
+- Current progress:
+  - All features remain `passing`.
+  - Current branch: `main`.
+- Next best action:
+  - Run `bun run electron:dev` normally and continue product-level StockCraft UI validation; no implementation feature is currently marked incomplete.
+- Known risk/blocker:
+  - Electron logs Node's experimental SQLite warning under Node 22.21.1; functionality is available and verified, but the API remains marked experimental by that runtime.
+  - On this Windows machine, use `init.ps1`; the WSL `/bin/bash` path remains unavailable.

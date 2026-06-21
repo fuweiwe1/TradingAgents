@@ -33,8 +33,8 @@ import { enableDebug } from '@craft-agent/shared/utils/debug'
 import { bootstrapServer, startHealthHttpServer, generateServerToken } from '@craft-agent/server-core/bootstrap'
 import {
   StockResearchPersistenceCoordinator,
-  StockStorageService,
 } from '@craft-agent/server-core/stock'
+import { StockStorageService } from '@craft-agent/server-core/stock/bun'
 import { validateSession, createWebuiHandler, nodeHttpAdapter } from '@craft-agent/server-core/webui'
 import type { WebuiHandler } from '@craft-agent/server-core/webui'
 import { getCredentialManager } from '@craft-agent/shared/credentials'

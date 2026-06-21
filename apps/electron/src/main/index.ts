@@ -93,8 +93,8 @@ import type { HandlerDeps } from './handlers/handler-deps'
 import { bootstrapServer, releaseServerLock } from '@craft-agent/server-core/bootstrap'
 import {
   StockResearchPersistenceCoordinator,
-  StockStorageService,
 } from '@craft-agent/server-core/stock'
+import { StockStorageService } from '@craft-agent/server-core/stock/node'
 import { createMessagingBootstrap, type MessagingBootstrapHandle } from '@craft-agent/messaging-gateway'
 import { getCredentialManager } from '@craft-agent/shared/credentials'
 import { initModelRefreshService, getModelRefreshService, setFetcherPlatform } from '@craft-agent/server-core/model-fetchers'

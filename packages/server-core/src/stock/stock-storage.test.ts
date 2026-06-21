@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, test } from 'bun:test'
 import { parseStockSymbol } from '@craft-agent/shared/stock'
-import { StockStorageService } from './stock-storage'
+import { StockStorageService } from './stock-storage-bun'
 
 function createService() {
   const dir = mkdtempSync(join(tmpdir(), 'stock-storage-'))

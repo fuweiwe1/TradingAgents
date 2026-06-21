@@ -1,7 +1,6 @@
 import { mkdirSync } from 'node:fs'
 import { dirname } from 'node:path'
 import { randomUUID } from 'node:crypto'
-import { Database } from 'bun:sqlite'
 import {
   STOCK_RESEARCH_STEPS,
   type ParsedStockSymbol,
@@ -19,6 +18,27 @@ import {
 export interface StockStorageServiceOptions {
   databasePath: string
 }
+
+export interface StockSqliteRunResult {
+  changes: number | bigint
+}
+
+export interface StockSqliteStatement<TRow, TParams extends unknown[]> {
+  all(...params: TParams): TRow[]
+  get(...params: TParams): TRow | null | undefined
+  run(...params: TParams): StockSqliteRunResult
+}
+
+export interface StockSqliteDatabase {
+  close(): void
+  exec(sql: string): void
+  query<TRow = unknown, TParams extends unknown[] = unknown[]>(
+    sql: string,
+  ): StockSqliteStatement<TRow, TParams>
+  transaction<T>(callback: () => T): () => T
+}
+
+export type StockSqliteDatabaseFactory = (databasePath: string) => StockSqliteDatabase
 
 export interface StockStorage {
   addWatchlistItem(input: {
@@ -114,12 +134,15 @@ interface ResearchReportRow extends SymbolRow {
   report_updated_at: number
 }
 
-export class StockStorageService {
-  private readonly db: Database
+export class StockStorageServiceBase {
+  private readonly db: StockSqliteDatabase
 
-  constructor(options: StockStorageServiceOptions) {
+  constructor(
+    options: StockStorageServiceOptions,
+    createDatabase: StockSqliteDatabaseFactory,
+  ) {
     mkdirSync(dirname(options.databasePath), { recursive: true })
-    this.db = new Database(options.databasePath)
+    this.db = createDatabase(options.databasePath)
     this.db.exec('PRAGMA foreign_keys = ON')
     this.initializeSchema()
   }

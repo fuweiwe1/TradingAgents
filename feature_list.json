@@ -144,9 +144,10 @@
         "2026-06-16: focused tests 通过：bun test packages/server-core/src/stock/stock-storage.test.ts packages/server-core/src/handlers/rpc/stock-research.test.ts packages/shared/src/protocol/__tests__/routing.test.ts apps/electron/src/shared/__tests__/ipc-channels.test.ts apps/electron/src/main/handlers/__tests__/registration.test.ts apps/electron/src/main/handlers/__tests__/registration-profiles.test.ts。",
         "2026-06-16: typecheck 通过：bun run typecheck:shared；cd packages/server-core && bun run typecheck；cd apps/electron && bun run typecheck。",
         "2026-06-16: powershell -NoProfile -ExecutionPolicy Bypass -File .\\init.ps1 通过。",
-        "2026-06-16: PR #2 发布前已合入本地 stock-001 CI baseline ancestor，避免重复显示 main 已有的 validate 修复；focused tests 27 个、shared/server/electron typecheck、init.ps1、json.tool、git diff --check 均通过。"
+        "2026-06-16: PR #2 发布前已合入本地 stock-001 CI baseline ancestor，避免重复显示 main 已有的 validate 修复；focused tests 27 个、shared/server/electron typecheck、init.ps1、json.tool、git diff --check 均通过。",
+        "2026-06-21: 修复 Electron 主进程无法打包 bun:sqlite：业务 SQL 下沉到运行时无关的 StockStorageServiceBase，headless server 使用 Bun bun:sqlite 适配器，Electron 使用其 Node 22.21.1 内置 node:sqlite 适配器。25 个 focused tests、四组 typecheck、build:main:win、Electron node:sqlite 建库烟测和完整 electron:dev 启动均通过。"
       ],
-      "notes": "当前实现使用 Bun 内置 bun:sqlite，而不是原计划的 better-sqlite3；原因是 better-sqlite3 在本机安装超时且原生 binding 探针失败。SQLite 由 Electron/headless server 注入 server-core handler，默认路径为 ~/.craft-agent/stockcraft.sqlite。Reports/Watchlist UI 后续复用已新增 RPC。"
+      "notes": "SQLite 业务逻辑由 server-core 共享；headless Bun server 使用 bun:sqlite，Electron 主进程使用 Electron 39 自带 Node 22 的 node:sqlite。默认路径为 ~/.craft-agent/stockcraft.sqlite，renderer 仅通过 RPC 访问。"
     },
     {
       "id": "stock-003",
