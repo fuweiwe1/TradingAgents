@@ -214,7 +214,7 @@
       "area": "stock-research",
       "title": "自动持久化研究步骤和最终报告",
       "user_visible_behavior": "股票研究完成后，五步结果和最终报告自动保存到本地；保存失败时原会话显示重试入口，必要时可让 Agent 重新生成规范报告。",
-      "status": "in_progress",
+      "status": "passing",
       "verification": [
         "规范的五步最终回复会自动保存五个步骤输出和一份报告。",
         "同一 research run 重复完成或重试不会产生重复报告。",
@@ -227,9 +227,14 @@
         "2026-06-21: 已确认现有 saveStockResearchReport RPC 没有生产调用点，研究最终回复不会自动沉淀到 Reports。",
         "2026-06-21: 用户确认失败策略：显示“重试保存”；重试先解析现有回复，仍不完整时让 Agent 重新生成规范报告。",
         "2026-06-21: 用户批准服务端完成钩子 + 规范 Markdown 解析方案。",
-        "2026-06-21: 已创建 docs/superpowers/specs/2026-06-21-stock-005-auto-persistence-design.md。"
+        "2026-06-21: 已创建 docs/superpowers/specs/2026-06-21-stock-005-auto-persistence-design.md 和 docs/superpowers/plans/2026-06-21-stock-005-auto-persistence.md。",
+        "2026-06-21: 已实现规范五步 Markdown 解析、免责声明校验、SessionManager 实例级最终消息完成监听、StockResearchPersistenceCoordinator、run 预创建、五步结果与报告 SQLite transaction 幂等保存。",
+        "2026-06-21: 已新增 getRunBySession/retryPersistence RPC 和 ElectronAPI 接线；保存失败在研究会话显示重试入口，重试先解析现有回复，仍无效时后台请求原 session 重新生成规范报告。",
+        "2026-06-21: Electron 与 headless server 均完成自动持久化协调器接线；旧 saveReport RPC 也按 run 幂等更新，避免唯一索引兼容性回归。",
+        "2026-06-21: 最终 focused suite 通过 73 tests、0 failures、517 expectations；registration 与 registration-profiles 分文件通过 4 tests、0 failures。",
+        "2026-06-21: bun run typecheck:shared、packages/server-core typecheck、apps/electron typecheck、packages/server typecheck、init.ps1、lint:i18n:sorted、lint:i18n:parity（6 locales，1488 keys）、JSON 和 diff 检查全部通过。"
       ],
-      "notes": "当前处于设计已批准、书面 Spec 待用户复核阶段；实现必须采用 TDD，且完成前保持唯一 in_progress 功能。"
+      "notes": "stock-005 已完成并通过验收。StockCraft v1 的研究闭环现在覆盖：创建 run、执行五步研究、自动持久化步骤和报告、Reports 查看，以及保存失败后的可见重试/重新生成恢复。"
     }
   ]
 }

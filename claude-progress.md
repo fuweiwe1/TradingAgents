@@ -743,3 +743,50 @@
 - Known risk/blocker:
   - The current `createRun` handler persists the research run only after `sendMessage()` returns; implementation must reverse this order so the completion hook can find the run.
   - On this Windows machine, use `init.ps1`; the WSL `/bin/bash` path remains unavailable.
+
+### Session 031
+
+- Date: 2026-06-21
+- Goal: Implement and verify `stock-005`, automatic persistence of completed StockCraft research.
+- Completed:
+  - Created isolated worktree `C:\craft_agents\.worktrees\stock-005-auto-persistence` on branch `codex/stock-005-auto-persistence`.
+  - Added a strict shared Markdown parser for the five required research sections and disclaimer, plus a canonical repair prompt.
+  - Added transactional, idempotent completion storage: five step outputs, one report per run, and completed run state are persisted atomically.
+  - Added an instance-level SessionManager final-assistant-message listener that fires only for a new final message on successful completion and isolates listener failures.
+  - Added `StockResearchPersistenceCoordinator` for automatic save, parse failure recording, transactional failure recording, parse-first retry, and asynchronous regeneration fallback.
+  - Changed `stockResearch:createRun` to persist and mark the run running before starting the Agent; initial send failures now persist a failed run.
+  - Added `stockResearch:getRunBySession` and `stockResearch:retryPersistence` through protocol, routing, server handlers, ElectronAPI, and channel map.
+  - Wired the coordinator into both Electron main and the standalone headless server.
+  - Added stale-safe renderer status loading and a localized Retry Save / regenerating banner in Stock Research sessions.
+  - Made the legacy `saveReport` RPC idempotent per run to remain compatible with the new unique report constraint.
+  - Updated `init.ps1` and `init.sh` to recognize linked Git worktrees through `git rev-parse`.
+  - Marked `stock-005` as `passing`.
+- TDD record:
+  - Parser tests first failed because `research-report.ts` was missing.
+  - Storage tests first failed because run lookup/status and completion methods were missing.
+  - Final-message listener tests first failed because the subscription boundary was missing.
+  - Coordinator tests first failed because the coordinator was missing; later regression tests reproduced SQLite failure recording and legacy save idempotency before fixes.
+  - Renderer helper tests first failed because persistence-state helpers were missing.
+- Verification:
+  - Focused suite: 73 tests, 0 failures, 517 expectations.
+  - `registration.test.ts` in its own process: 2 tests, 0 failures.
+  - `registration-profiles.test.ts` in its own process: 2 tests, 0 failures.
+  - `bun run typecheck:shared`: passed.
+  - `cd packages/server-core; bun run typecheck`: passed.
+  - `cd apps/electron; bun run typecheck`: passed.
+  - `cd packages/server; bun run typecheck`: passed.
+  - `powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1`: passed from the linked worktree and correctly displayed recent commits.
+  - `bun run lint:i18n:sorted`: passed.
+  - `bun run lint:i18n:parity`: passed with 6 locales and 1488 keys each.
+  - `python -m json.tool feature_list.json`: passed after final record edits.
+  - `git diff --check`: passed after final record edits with only expected Windows line-ending warnings.
+- Environment note:
+  - Initial `bun install --frozen-lockfile` in the new worktree was blocked by a GitHub API 403 in `@vscode/ripgrep` postinstall. `bun install --frozen-lockfile --ignore-scripts` completed, and all required tests/typechecks passed without that optional binary download.
+- Current progress:
+  - `stock-005` is `passing`; all features currently listed in `feature_list.json` are passing.
+  - Current branch: `codex/stock-005-auto-persistence`.
+  - Worktree: `C:\craft_agents\.worktrees\stock-005-auto-persistence`.
+  - The branch has not been pushed or merged.
+- Known risk/blocker:
+  - Registration coverage files can still exceed their 5-second timeout and contaminate shared mock state when run concurrently with heavy typechecks; each file passes consistently in its own process.
+  - On this Windows machine, `bash ./init.sh` remains unavailable because the WSL `/bin/bash` path is missing; use `init.ps1`.
