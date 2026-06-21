@@ -204,4 +204,103 @@ describe('StockStorageService', () => {
 
     service.close()
   })
+
+  test('finds research runs by session and persists failure/running transitions', () => {
+    const service = createService()
+    const run = service.createResearchRun({
+      sessionId: 'session-status',
+      symbol: parseStockSymbol('AAPL'),
+    })
+
+    expect(service.getResearchRunBySessionId('session-status')).toMatchObject({
+      id: run.id,
+      status: 'created',
+    })
+    expect(service.getResearchRunBySessionId('missing')).toBeNull()
+
+    expect(service.markResearchRunRunning(run.id)).toMatchObject({
+      status: 'running',
+      errorMessage: null,
+      startedAt: expect.any(Number),
+    })
+    expect(service.markResearchPersistenceFailed(
+      run.id,
+      '缺少章节：报告生成',
+    )).toMatchObject({
+      status: 'failed',
+      errorMessage: '缺少章节：报告生成',
+    })
+    expect(service.markResearchRunRunning(run.id)).toMatchObject({
+      status: 'running',
+      errorMessage: null,
+    })
+
+    service.close()
+  })
+
+  test('atomically completes steps and upserts one report per research run', () => {
+    const service = createService()
+    const run = service.createResearchRun({
+      sessionId: 'session-complete',
+      symbol: parseStockSymbol('AAPL'),
+    })
+    const steps = {
+      data_collection: 'Data output',
+      analyst_views: 'Analyst output',
+      bull_bear_debate: 'Debate output',
+      risk_review: 'Risk output',
+      report_generation: 'Final output',
+    } as const
+
+    const firstReport = service.saveCompletedResearch({
+      runId: run.id,
+      title: 'AAPL 研究报告',
+      rating: null,
+      riskLevel: '中',
+      summary: 'First summary',
+      contentMarkdown: '# First',
+      steps,
+    })
+
+    expect(service.getResearchRunBySessionId('session-complete')).toMatchObject({
+      id: run.id,
+      status: 'completed',
+      completedAt: expect.any(Number),
+      errorMessage: null,
+    })
+    expect(service.listResearchSteps(run.id)).toMatchObject([
+      { stepKey: 'data_collection', status: 'completed', outputMarkdown: 'Data output' },
+      { stepKey: 'analyst_views', status: 'completed', outputMarkdown: 'Analyst output' },
+      { stepKey: 'bull_bear_debate', status: 'completed', outputMarkdown: 'Debate output' },
+      { stepKey: 'risk_review', status: 'completed', outputMarkdown: 'Risk output' },
+      { stepKey: 'report_generation', status: 'completed', outputMarkdown: 'Final output' },
+    ])
+
+    const updatedReport = service.saveCompletedResearch({
+      runId: run.id,
+      title: 'AAPL 研究报告',
+      rating: 'neutral',
+      riskLevel: '低',
+      summary: 'Updated summary',
+      contentMarkdown: '# Updated',
+      steps: {
+        ...steps,
+        report_generation: 'Updated final output',
+      },
+    })
+
+    expect(updatedReport.id).toBe(firstReport.id)
+    expect(service.listResearchReports()).toHaveLength(1)
+    expect(service.getResearchReport(firstReport.id)).toMatchObject({
+      rating: 'neutral',
+      riskLevel: '低',
+      summary: 'Updated summary',
+      contentMarkdown: '# Updated',
+    })
+    expect(service.listResearchSteps(run.id).at(-1)).toMatchObject({
+      outputMarkdown: 'Updated final output',
+    })
+
+    service.close()
+  })
 })

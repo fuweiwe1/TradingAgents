@@ -122,3 +122,13 @@ export interface ParsedStockResearchReport {
 export type ParseStockResearchReportResult =
   | { ok: true; value: ParsedStockResearchReport }
   | { ok: false; error: string }
+
+export interface SaveCompletedStockResearchInput {
+  runId: string
+  title: string
+  rating: string | null
+  riskLevel: string | null
+  summary: string
+  contentMarkdown: string
+  steps: Record<StockResearchStepKey, string>
+}

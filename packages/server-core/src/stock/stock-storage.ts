@@ -5,6 +5,7 @@ import { Database } from 'bun:sqlite'
 import {
   STOCK_RESEARCH_STEPS,
   type ParsedStockSymbol,
+  type SaveCompletedStockResearchInput,
   type StockResearchReport,
   type StockResearchRunRecord,
   type StockResearchRunStatus,
@@ -35,7 +36,16 @@ export interface StockStorage {
     sessionId: string
     symbol: ParsedStockSymbol
   }): StockResearchRunRecord
+  getResearchRunBySessionId(sessionId: string): StockResearchRunRecord | null
+  markResearchRunRunning(runId: string): StockResearchRunRecord
+  markResearchPersistenceFailed(
+    runId: string,
+    message: string,
+  ): StockResearchRunRecord
   listResearchSteps(runId: string): StockResearchStepRecord[]
+  saveCompletedResearch(
+    input: SaveCompletedStockResearchInput,
+  ): StockResearchReport
   saveResearchReport(input: {
     runId: string
     title: string
@@ -239,6 +249,48 @@ export class StockStorageService {
     return this.getResearchRun(runId)
   }
 
+  getResearchRunBySessionId(sessionId: string): StockResearchRunRecord | null {
+    const row = this.db.query<ResearchRunRow, [string]>(`
+      ${RESEARCH_RUN_SELECT_SQL}
+      WHERE research_runs.session_id = ?
+      ORDER BY research_runs.created_at DESC
+      LIMIT 1
+    `).get(sessionId)
+    return row ? mapResearchRunRow(row) : null
+  }
+
+  markResearchRunRunning(runId: string): StockResearchRunRecord {
+    const now = Date.now()
+    const result = this.db.query(`
+      UPDATE research_runs
+      SET status = 'running',
+          started_at = COALESCE(started_at, ?),
+          completed_at = NULL,
+          error_message = NULL,
+          updated_at = ?
+      WHERE id = ?
+    `).run(now, now, runId)
+    if (result.changes === 0) throw new Error(`Research run not found: ${runId}`)
+    return this.getResearchRun(runId)
+  }
+
+  markResearchPersistenceFailed(
+    runId: string,
+    message: string,
+  ): StockResearchRunRecord {
+    const now = Date.now()
+    const result = this.db.query(`
+      UPDATE research_runs
+      SET status = 'failed',
+          completed_at = NULL,
+          error_message = ?,
+          updated_at = ?
+      WHERE id = ?
+    `).run(message, now, runId)
+    if (result.changes === 0) throw new Error(`Research run not found: ${runId}`)
+    return this.getResearchRun(runId)
+  }
+
   listResearchSteps(runId: string): StockResearchStepRecord[] {
     return this.db.query<ResearchStepRow, [string]>(`
       SELECT id, run_id, step_key, status, input_json, output_markdown, output_json,
@@ -283,6 +335,104 @@ export class StockStorageService {
     )
 
     return this.getResearchReport(id)
+  }
+
+  saveCompletedResearch(
+    input: SaveCompletedStockResearchInput,
+  ): StockResearchReport {
+    const now = Date.now()
+    let reportId = ''
+
+    const save = this.db.transaction(() => {
+      const run = this.getResearchRun(input.runId)
+
+      for (const step of STOCK_RESEARCH_STEPS) {
+        const result = this.db.query(`
+          UPDATE research_steps
+          SET status = 'completed',
+              output_markdown = ?,
+              started_at = COALESCE(started_at, ?),
+              completed_at = ?,
+              updated_at = ?
+          WHERE run_id = ? AND step_key = ?
+        `).run(
+          input.steps[step.key],
+          now,
+          now,
+          now,
+          input.runId,
+          step.key,
+        )
+        if (result.changes !== 1) {
+          throw new Error(
+            `Research step not found: ${input.runId}/${step.key}`,
+          )
+        }
+      }
+
+      const existing = this.db.query<{ id: string }, [string]>(`
+        SELECT id
+        FROM research_reports
+        WHERE run_id = ?
+      `).get(input.runId)
+
+      if (existing) {
+        reportId = existing.id
+        this.db.query(`
+          UPDATE research_reports
+          SET title = ?,
+              symbol_snapshot_json = ?,
+              rating = ?,
+              risk_level = ?,
+              summary = ?,
+              content_markdown = ?,
+              updated_at = ?
+          WHERE id = ?
+        `).run(
+          input.title,
+          JSON.stringify(run.symbol),
+          input.rating,
+          input.riskLevel,
+          input.summary,
+          input.contentMarkdown,
+          now,
+          reportId,
+        )
+      } else {
+        reportId = randomUUID()
+        this.db.query(`
+          INSERT INTO research_reports (
+            id, run_id, title, symbol_snapshot_json, rating, risk_level,
+            summary, content_markdown, created_at, updated_at
+          )
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(
+          reportId,
+          input.runId,
+          input.title,
+          JSON.stringify(run.symbol),
+          input.rating,
+          input.riskLevel,
+          input.summary,
+          input.contentMarkdown,
+          now,
+          now,
+        )
+      }
+
+      this.db.query(`
+        UPDATE research_runs
+        SET status = 'completed',
+            started_at = COALESCE(started_at, ?),
+            completed_at = ?,
+            error_message = NULL,
+            updated_at = ?
+        WHERE id = ?
+      `).run(now, now, now, input.runId)
+    })
+
+    save()
+    return this.getResearchReport(reportId)
   }
 
   listResearchReports(): StockResearchReport[] {
@@ -415,6 +565,16 @@ export class StockStorageService {
         created_at INTEGER NOT NULL,
         updated_at INTEGER NOT NULL
       );
+
+      DELETE FROM research_reports
+      WHERE rowid NOT IN (
+        SELECT MIN(rowid)
+        FROM research_reports
+        GROUP BY run_id
+      );
+
+      CREATE UNIQUE INDEX IF NOT EXISTS research_reports_run_id_unique
+      ON research_reports(run_id);
     `)
   }
 }
