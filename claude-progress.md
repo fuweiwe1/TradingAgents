@@ -664,3 +664,33 @@
 - Known risk/blocker:
   - The local target branch is ahead of `origin/codex/stock-002-sqlite-storage`; the user will push manually if desired.
   - On this Windows machine, use `init.ps1`; the WSL `/bin/bash` path remains unavailable.
+
+### Session 028
+
+- Date: 2026-06-21
+- Goal: Resume from persistent state and verify the completed combined branch before handoff.
+- Completed:
+  - Restored context from `claude-progress.md`, `feature_list.json`, `session-handoff.md`, recent commits, and the Watchlist implementation plan.
+  - Confirmed the normal repository workspace is clean on `codex/stock-002-sqlite-storage`.
+  - Confirmed local `HEAD`, the cached tracking ref, and the live remote branch `origin/codex/stock-002-sqlite-storage` all point to `f5c90cd`.
+  - Confirmed every feature in `feature_list.json` is marked `passing`; no unstarted feature remains, so no new implementation was opened without a product decision.
+  - Reproduced the documented Bun cross-file mock-state failure when the two registration test files run in one invocation, then confirmed each file passes in its own process.
+- Verification:
+  - `powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1`: passed.
+  - Core focused suite: 64 tests, 0 failures, 477 expectations.
+  - `registration.test.ts` in its own process: 2 tests, 0 failures.
+  - `registration-profiles.test.ts` in its own process: 2 tests, 0 failures.
+  - `bun run typecheck:shared`: passed.
+  - `cd packages/server-core; bun run typecheck`: passed.
+  - `cd apps/electron; bun run typecheck`: passed.
+  - `bun run lint:i18n:sorted`: passed.
+  - `bun run lint:i18n:parity`: passed with 6 locales and 1484 keys each.
+  - `python -m json.tool feature_list.json`: passed after record edits.
+  - `git diff --check`: passed after record edits with only expected Windows line-ending warnings.
+- Current progress:
+  - Current branch: `codex/stock-002-sqlite-storage`.
+  - `stock-001` through `stock-004` are integrated, verified, and present on the remote branch at `f5c90cd`.
+  - The next action requires a product/integration choice: merge toward `main`, open/update a PR, keep the branch, or define the next feature.
+- Known risk/blocker:
+  - Running `registration.test.ts` and `registration-profiles.test.ts` together in one Bun invocation still shares mock registration state and yields a timeout/cross-profile false negative; each file passes independently.
+  - On this Windows machine, use `init.ps1`; the WSL `/bin/bash` path remains unavailable.

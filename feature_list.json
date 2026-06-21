@@ -1,6 +1,6 @@
 {
   "project": "StockCraft",
-  "last_updated": "2026-06-20",
+  "last_updated": "2026-06-21",
   "rules": {
     "single_active_feature": true,
     "passing_requires_evidence": true,
@@ -202,9 +202,10 @@
         "2026-06-20: 最终非注册 focused suite 通过 70 tests、0 failures、487 expectations；注册覆盖测试因与大套件并行时共享 mock 状态会产生假阴性，拆为独立进程后 registration + registration-profiles 通过 4 tests、0 failures。",
         "2026-06-20: bun run typecheck:shared、packages/server-core typecheck、apps/electron typecheck、init.ps1、lint:i18n:sorted、lint:i18n:parity（6 locales，1484 keys）、python -m json.tool feature_list.json 和 git diff --check 均通过。",
         "2026-06-20: 浏览器烟测确认 Vite 开发服务器可返回 HTTP 200，但普通浏览器环境没有 Electron preload，React 应用不会挂载；该限制不作为产品失败，页面接线按既定策略由 focused tests、Electron typecheck 和启动入口验证。",
-        "2026-06-20: 已将 codex/stock-004-watchlist 快进合并到本地 codex/stock-002-sqlite-storage；合并后 70 个核心测试、4 个独立注册测试、shared/server-core/electron typecheck、init.ps1、i18n sorted/parity、JSON 和 diff 检查通过。"
+        "2026-06-20: 已将 codex/stock-004-watchlist 快进合并到本地 codex/stock-002-sqlite-storage；合并后 70 个核心测试、4 个独立注册测试、shared/server-core/electron typecheck、init.ps1、i18n sorted/parity、JSON 和 diff 检查通过。",
+        "2026-06-21: 恢复会话后确认本地与 origin/codex/stock-002-sqlite-storage 均指向 f5c90cd。重新验证 64 个核心 focused tests 与分文件运行的 4 个注册测试全部通过；shared/server-core/electron typecheck、init.ps1、i18n sorted/parity、JSON 和 diff 检查均通过。"
       ],
-      "notes": "stock-004 Watchlist 已完成并通过验收：支持添加 A股/港股/美股、派生分组、搜索、备注与分组原子编辑、确认删除和直接发起研究。已快进合并到本地 codex/stock-002-sqlite-storage，尚未推送；feature_list 中已无未完成 feature。"
+      "notes": "stock-004 Watchlist 已完成并通过验收：支持添加 A股/港股/美股、派生分组、搜索、备注与分组原子编辑、确认删除和直接发起研究。已快进合并并推送到 origin/codex/stock-002-sqlite-storage；feature_list 中已无未完成 feature。"
     }
   ]
 }
