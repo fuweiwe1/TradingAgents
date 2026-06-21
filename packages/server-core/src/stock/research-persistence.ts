@@ -65,10 +65,22 @@ export class StockResearchPersistenceCoordinator {
       return
     }
 
-    this.options.storage.saveCompletedResearch({
-      runId: run.id,
-      ...parsed.value,
-    })
+    try {
+      this.options.storage.saveCompletedResearch({
+        runId: run.id,
+        ...parsed.value,
+      })
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      this.options.storage.markResearchPersistenceFailed(
+        run.id,
+        `报告保存失败：${message}`,
+      )
+      this.options.logger.error(
+        `[stock-persistence] Failed to save report for run ${run.id}: ${message}`,
+      )
+      return
+    }
     this.options.logger.info(
       `[stock-persistence] Saved completed report for run ${run.id}`,
     )
@@ -99,10 +111,19 @@ export class StockResearchPersistenceCoordinator {
         contentMarkdown: latestFinalMessage.content,
       })
       if (parsed.ok) {
-        this.options.storage.saveCompletedResearch({
-          runId: run.id,
-          ...parsed.value,
-        })
+        try {
+          this.options.storage.saveCompletedResearch({
+            runId: run.id,
+            ...parsed.value,
+          })
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error)
+          this.options.storage.markResearchPersistenceFailed(
+            run.id,
+            `报告保存失败：${message}`,
+          )
+          throw error
+        }
         return { status: 'completed' }
       }
     }

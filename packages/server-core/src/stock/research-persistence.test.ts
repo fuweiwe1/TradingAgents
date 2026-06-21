@@ -31,6 +31,7 @@ function createHarness(options?: {
   content?: string
   isProcessing?: boolean
   sendError?: Error
+  saveError?: Error
 }) {
   const calls: Array<{ method: string; args: unknown[] }> = []
   const run = {
@@ -57,6 +58,7 @@ function createHarness(options?: {
     },
     saveCompletedResearch(input: unknown) {
       calls.push({ method: 'saveCompletedResearch', args: [input] })
+      if (options?.saveError) throw options.saveError
       return { id: 'report-1', ...(input as object) }
     },
     markResearchPersistenceFailed(runId: string, message: string) {
@@ -167,6 +169,24 @@ describe('StockResearchPersistenceCoordinator', () => {
     expect(calls).toContainEqual({
       method: 'markResearchPersistenceFailed',
       args: ['run-1', '缺少章节：数据收集'],
+    })
+  })
+
+  test('records a persistence failure when transactional report saving fails', async () => {
+    const { coordinator, calls } = createHarness({
+      saveError: new Error('database locked'),
+    })
+
+    await coordinator.handleFinalAssistantMessage({
+      sessionId: 'session-1',
+      workspaceId: 'workspace-1',
+      messageId: 'assistant-1',
+      content: VALID_REPORT,
+    })
+
+    expect(calls).toContainEqual({
+      method: 'markResearchPersistenceFailed',
+      args: ['run-1', '报告保存失败：database locked'],
     })
   })
 
