@@ -202,6 +202,21 @@ describe('StockStorageService', () => {
       contentMarkdown: expect.stringContaining('Not investment advice'),
     })
 
+    const updatedReport = service.saveResearchReport({
+      runId: run.id,
+      title: 'AAPL Updated Research Report',
+      rating: 'buy',
+      riskLevel: 'low',
+      summary: 'Updated setup.',
+      contentMarkdown: '# Updated AAPL',
+    })
+    expect(updatedReport.id).toBe(report.id)
+    expect(service.listResearchReports()).toHaveLength(1)
+    expect(service.getResearchReport(report.id)).toMatchObject({
+      title: 'AAPL Updated Research Report',
+      summary: 'Updated setup.',
+    })
+
     service.close()
   })
 

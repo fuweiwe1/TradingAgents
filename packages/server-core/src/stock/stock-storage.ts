@@ -321,6 +321,14 @@ export class StockStorageService {
         summary, content_markdown, created_at, updated_at
       )
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(run_id) DO UPDATE SET
+        title = excluded.title,
+        symbol_snapshot_json = excluded.symbol_snapshot_json,
+        rating = excluded.rating,
+        risk_level = excluded.risk_level,
+        summary = excluded.summary,
+        content_markdown = excluded.content_markdown,
+        updated_at = excluded.updated_at
     `).run(
       id,
       input.runId,
@@ -334,7 +342,13 @@ export class StockStorageService {
       now,
     )
 
-    return this.getResearchReport(id)
+    const saved = this.db.query<{ id: string }, [string]>(`
+      SELECT id
+      FROM research_reports
+      WHERE run_id = ?
+    `).get(input.runId)
+    if (!saved) throw new Error(`Research report not found for run: ${input.runId}`)
+    return this.getResearchReport(saved.id)
   }
 
   saveCompletedResearch(
