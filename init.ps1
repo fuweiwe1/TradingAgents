@@ -31,7 +31,13 @@ foreach ($File in $RequiredFiles) {
 Write-Host "==> Validating feature_list.json"
 Get-Content -LiteralPath "feature_list.json" -Raw -Encoding UTF8 | ConvertFrom-Json | Out-Null
 
-if (Test-Path -LiteralPath ".git" -PathType Container) {
+$IsGitRepository = $false
+if (Get-Command git -ErrorAction SilentlyContinue) {
+  git rev-parse --is-inside-work-tree 2>$null | Out-Null
+  $IsGitRepository = $LASTEXITCODE -eq 0
+}
+
+if ($IsGitRepository) {
   Write-Host "==> Recent commits"
   git log --oneline -5
 } else {

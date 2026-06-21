@@ -34,7 +34,7 @@ else
   echo "未找到 python/python3，跳过 JSON 语法校验"
 fi
 
-if [ -d ".git" ]; then
+if command -v git >/dev/null 2>&1 && git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   echo "==> 最近提交"
   git log --oneline -5 || true
 else
