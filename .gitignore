@@ -61,6 +61,9 @@ pnpm-lock.yaml
 # Superpowers brainstorming companion local screens
 .superpowers/
 
+# Local git worktrees
+.worktrees/
+
 # SSH keys and secrets
 *.pem
 *.key
