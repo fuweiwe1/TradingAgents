@@ -97,6 +97,11 @@ import { ensureLabelsExist } from '@craft-agent/shared/labels/crud'
 import { loadStatusConfig } from '@craft-agent/shared/statuses/storage'
 import { AutomationSystem, createPromptHistoryEntry, appendAutomationHistoryEntry, type AutomationSystemMetadataSnapshot } from '@craft-agent/shared/automations'
 import { buildBackendRuntimeSignature, buildRestartRequiredSignature, filterAttachmentsForModelInput } from './runtime-config'
+import {
+  FinalAssistantMessageListenerRegistry,
+  getFinalAssistantMessageEvent,
+  type FinalAssistantMessageListener,
+} from './final-assistant-message-listener'
 
 // Import from server-core domain utilities
 import { sanitizeForTitle, shouldActivateBrowserOverlay, normalizeBrowserToolName, rollbackFailedBranchCreation, releaseBrowserOwnershipOnForcedStop } from '@craft-agent/server-core/domain'
@@ -1101,6 +1106,12 @@ interface PendingDelta {
 
 export class SessionManager implements ISessionManager {
   private sessions: Map<string, ManagedSession> = new Map()
+  private readonly finalAssistantMessageListeners =
+    new FinalAssistantMessageListenerRegistry(error => {
+      sessionRuntimeHooks.captureException(error, {
+        errorSource: 'final-assistant-message-listener',
+      })
+    })
   // Delta batching for performance - reduces IPC events from 50+/sec to ~20/sec
   private pendingDeltas: Map<string, PendingDelta> = new Map()
   private deltaFlushTimers: Map<string, NodeJS.Timeout> = new Map()
@@ -1191,6 +1202,12 @@ export class SessionManager implements ISessionManager {
     fn: (input: { workspaceId: string; sessionId: string; topicName: string }) => Promise<void>,
   ): void {
     this.automationBinder = fn
+  }
+
+  subscribeToFinalAssistantMessage(
+    listener: FinalAssistantMessageListener,
+  ): () => void {
+    return this.finalAssistantMessageListeners.subscribe(listener)
   }
 
   private browserPaneManager: IBrowserPaneManager | null = null
@@ -6232,6 +6249,17 @@ export class SessionManager implements ISessionManager {
     const isViewing = this.isSessionBeingViewed(sessionId, managed.workspace.id)
     const currentFinalMessageId = this.getLastFinalAssistantMessageId(managed.messages)
     const didReceiveNewFinalMessage = !!currentFinalMessageId && currentFinalMessageId !== turnStartFinalMessageId
+    const finalAssistantMessageEvent = getFinalAssistantMessageEvent({
+      reason,
+      sessionId,
+      workspaceId: managed.workspace.id,
+      turnStartFinalMessageId,
+      messages: managed.messages,
+    })
+
+    if (finalAssistantMessageEvent) {
+      await this.finalAssistantMessageListeners.notify(finalAssistantMessageEvent)
+    }
 
     if (reason === 'complete' && didReceiveNewFinalMessage) {
       if (isViewing) {

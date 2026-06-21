@@ -25,6 +25,12 @@ import type {
 } from '@craft-agent/shared/protocol'
 import type { SessionBundle, DispatchMode } from '@craft-agent/shared/sessions'
 import type { EventSink } from '../transport'
+import type {
+  FinalAssistantMessageEvent,
+  FinalAssistantMessageListener,
+} from '../sessions/final-assistant-message-listener'
+
+export type { FinalAssistantMessageEvent, FinalAssistantMessageListener }
 
 export interface ISessionManager {
   // ---------------------------------------------------------------------------
@@ -89,6 +95,9 @@ export interface ISessionManager {
     onAck?: (messageId: string) => void,
     rpcContext?: { callerClientId?: string },
   ): Promise<void>
+  subscribeToFinalAssistantMessage(
+    listener: FinalAssistantMessageListener,
+  ): () => void
   cancelProcessing(sessionId: string, silent?: boolean): Promise<void>
   killShell(sessionId: string, shellId: string): Promise<{ success: boolean; error?: string }>
   getTaskOutput(taskId: string): Promise<string | null>
