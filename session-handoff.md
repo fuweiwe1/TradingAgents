@@ -3,11 +3,9 @@
 ## Current state
 
 - Repository: `C:\craft_agents`
-- Current branch: `main`
-- Local merge commit: `e9f2044`
-- Remote `origin/main` before the local merge: `a6df0e6`
-- Local `main` has not been pushed.
-- All features in `feature_list.json` are `passing`; there is no unstarted feature.
+- Current branch: `codex/stock-005-auto-persistence`
+- Base branch: `main` at `c650775`
+- `stock-005` is the only `in_progress` feature.
 
 ## Completed product scope
 
@@ -32,7 +30,6 @@
 
 ## Next action
 
-No implementation task is authorized by the current feature list. Choose one:
-
-1. Push local `main` to `origin/main` when ready.
-2. Define and prioritize the next product feature, then add it to `feature_list.json` before implementation.
+1. User reviews `docs/superpowers/specs/2026-06-21-stock-005-auto-persistence-design.md`.
+2. After approval, write the TDD implementation plan.
+3. Execute the plan one task at a time and keep `stock-005` `in_progress` until final verification.

@@ -206,7 +206,30 @@
         "2026-06-21: 恢复会话后确认本地与 origin/codex/stock-002-sqlite-storage 均指向 f5c90cd。重新验证 64 个核心 focused tests 与分文件运行的 4 个注册测试全部通过；shared/server-core/electron typecheck、init.ps1、i18n sorted/parity、JSON 和 diff 检查均通过。",
         "2026-06-21: 已将 codex/stock-002-sqlite-storage 本地合并到最新 main，merge commit 为 e9f2044。合并后 94 个 StockCraft focused tests、4 个分离注册测试、shared/server-core/electron typecheck、init.ps1、i18n sorted/parity、JSON 和 diff 检查通过。"
       ],
-      "notes": "stock-004 Watchlist 已完成并通过验收：支持添加 A股/港股/美股、派生分组、搜索、备注与分组原子编辑、确认删除和直接发起研究。StockCraft stock-001 至 stock-004 已本地合并到 main，尚未推送 main；feature_list 中已无未完成 feature。"
+      "notes": "stock-004 Watchlist 已完成并通过验收：支持添加 A股/港股/美股、派生分组、搜索、备注与分组原子编辑、确认删除和直接发起研究。StockCraft stock-001 至 stock-004 已合并并推送到 main。"
+    },
+    {
+      "id": "stock-005",
+      "priority": 7,
+      "area": "stock-research",
+      "title": "自动持久化研究步骤和最终报告",
+      "user_visible_behavior": "股票研究完成后，五步结果和最终报告自动保存到本地；保存失败时原会话显示重试入口，必要时可让 Agent 重新生成规范报告。",
+      "status": "in_progress",
+      "verification": [
+        "规范的五步最终回复会自动保存五个步骤输出和一份报告。",
+        "同一 research run 重复完成或重试不会产生重复报告。",
+        "缺少章节、空章节或缺少免责声明时不保存残缺报告。",
+        "保存失败时研究会话显示“重试保存”。",
+        "重试先解析现有最终回复，仍无效时让 Agent 在原 session 重新生成规范报告。",
+        "Electron 和 headless server 都使用服务端自动持久化协调器。"
+      ],
+      "evidence": [
+        "2026-06-21: 已确认现有 saveStockResearchReport RPC 没有生产调用点，研究最终回复不会自动沉淀到 Reports。",
+        "2026-06-21: 用户确认失败策略：显示“重试保存”；重试先解析现有回复，仍不完整时让 Agent 重新生成规范报告。",
+        "2026-06-21: 用户批准服务端完成钩子 + 规范 Markdown 解析方案。",
+        "2026-06-21: 已创建 docs/superpowers/specs/2026-06-21-stock-005-auto-persistence-design.md。"
+      ],
+      "notes": "当前处于设计已批准、书面 Spec 待用户复核阶段；实现必须采用 TDD，且完成前保持唯一 in_progress 功能。"
     }
   ]
 }

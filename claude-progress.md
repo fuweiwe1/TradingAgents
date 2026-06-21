@@ -724,3 +724,22 @@
 - Known risk/blocker:
   - The two registration test files must still run in separate Bun processes to avoid their known shared mock-state false negative.
   - On this Windows machine, use `init.ps1`; the WSL `/bin/bash` path remains unavailable.
+
+### Session 030
+
+- Date: 2026-06-21
+- Goal: Define the missing v1 automatic research persistence closure as `stock-005`.
+- Completed:
+  - Confirmed `origin/main` contains the locally integrated StockCraft work at `c650775`.
+  - Verified all previously listed features were `passing`, then identified the missing production call path from completed research messages to `saveStockResearchReport`.
+  - User selected visible failure with Retry Save, and selected retry behavior that first reparses the existing final reply before asking the Agent to regenerate a compliant report.
+  - User approved the service-side completion hook plus strict Markdown parsing approach.
+  - Created branch `codex/stock-005-auto-persistence`.
+  - Added `stock-005` as the only `in_progress` feature in `feature_list.json`.
+  - Created `docs/superpowers/specs/2026-06-21-stock-005-auto-persistence-design.md`.
+- Current progress:
+  - The written design is ready for user review.
+  - No production implementation has started; the next step after approval is a detailed TDD implementation plan.
+- Known risk/blocker:
+  - The current `createRun` handler persists the research run only after `sendMessage()` returns; implementation must reverse this order so the completion hook can find the run.
+  - On this Windows machine, use `init.ps1`; the WSL `/bin/bash` path remains unavailable.
