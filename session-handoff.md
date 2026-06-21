@@ -3,10 +3,10 @@
 ## Current state
 
 - Repository: `C:\craft_agents`
-- Current branch: `codex/stock-002-sqlite-storage`
-- Current verified commit: `f5c90cd`
-- Live remote `origin/codex/stock-002-sqlite-storage`: `f5c90cd`
-- Working tree was clean before the Session 028 record update.
+- Current branch: `main`
+- Local merge commit: `e9f2044`
+- Remote `origin/main` before the local merge: `a6df0e6`
+- Local `main` has not been pushed.
 - All features in `feature_list.json` are `passing`; there is no unstarted feature.
 
 ## Completed product scope
@@ -19,7 +19,7 @@
 ## Latest verification
 
 - `powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1`: passed.
-- Core focused suite: 64 tests, 0 failures, 477 expectations.
+- StockCraft focused suite: 94 tests, 0 failures, 546 expectations.
 - Registration tests: 4 tests passed when the two files were run in separate Bun processes.
 - Shared, server-core, and Electron typechecks: passed.
 - i18n sorted/parity checks: passed; 6 locales and 1484 keys each.
@@ -34,7 +34,5 @@
 
 No implementation task is authorized by the current feature list. Choose one:
 
-1. Merge/integrate the combined branch toward `main`.
-2. Open or update a pull request.
-3. Keep the branch as-is.
-4. Define and prioritize the next product feature, then add it to `feature_list.json` before implementation.
+1. Push local `main` to `origin/main` when ready.
+2. Define and prioritize the next product feature, then add it to `feature_list.json` before implementation.

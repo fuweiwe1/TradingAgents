@@ -694,3 +694,33 @@
 - Known risk/blocker:
   - Running `registration.test.ts` and `registration-profiles.test.ts` together in one Bun invocation still shares mock registration state and yields a timeout/cross-profile false negative; each file passes independently.
   - On this Windows machine, use `init.ps1`; the WSL `/bin/bash` path remains unavailable.
+
+### Session 029
+
+- Date: 2026-06-21
+- Goal: Merge the completed StockCraft branch into local `main` and leave pushing to the user.
+- Completed:
+  - Confirmed `codex/stock-002-sqlite-storage` was clean at `71cb02b`.
+  - Switched to `main` and fast-forwarded it from `3fb97d8` to current `origin/main` at `a6df0e6`.
+  - Merged `codex/stock-002-sqlite-storage` into local `main` with merge commit `e9f2044`; no merge conflicts occurred.
+  - Investigated the post-merge locale sorted-check failure. The Git index contained LF while the Windows working tree contained CRLF; running the standard locale sorter produced no Git content diff, refreshed the index, and restored a clean sorted check.
+  - Did not push any branch.
+- Verification on merged `main`:
+  - StockCraft focused suite: 94 tests, 0 failures, 546 expectations.
+  - `registration.test.ts` in its own process: 2 tests, 0 failures.
+  - `registration-profiles.test.ts` in its own process: 2 tests, 0 failures.
+  - `bun run typecheck:shared`: passed.
+  - `cd packages/server-core; bun run typecheck`: passed.
+  - `cd apps/electron; bun run typecheck`: passed.
+  - `powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1`: passed.
+  - `bun run lint:i18n:sorted`: passed after line-ending normalization with no locale content diff.
+  - `bun run lint:i18n:parity`: passed with 6 locales and 1484 keys each.
+  - `python -m json.tool feature_list.json`: passed after final record edits.
+  - `git diff --check`: passed after final record edits with only expected Windows line-ending warnings.
+- Current progress:
+  - Current branch: `main`.
+  - `stock-001` through `stock-004` are locally integrated into `main`.
+  - Local `main` has not been pushed; the user requested the push command for manual execution.
+- Known risk/blocker:
+  - The two registration test files must still run in separate Bun processes to avoid their known shared mock-state false negative.
+  - On this Windows machine, use `init.ps1`; the WSL `/bin/bash` path remains unavailable.
