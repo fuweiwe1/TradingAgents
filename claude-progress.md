@@ -869,3 +869,21 @@
 - Known risk/blocker:
   - Several modules capture paths at import time, so implementation needs an Electron bootstrap entry that sets the instance identity before dynamically importing the existing main process.
   - On this Windows machine, use `init.ps1`; the WSL `/bin/bash` path remains unavailable.
+
+### Session 035
+
+- Date: 2026-06-21
+- Goal: Convert the approved `infra-002` design into an executable TDD plan.
+- Completed:
+  - User approved `docs/superpowers/specs/2026-06-21-infra-002-instance-isolation-design.md`.
+  - Mapped the implementation boundaries across shared config, Electron bootstrap/build entry points, server storage paths, child-process environments, packaging, and dual-instance verification.
+  - Created `docs/superpowers/plans/2026-06-21-infra-002-instance-isolation.md`.
+  - Split implementation into nine independently verifiable tasks with red/green commands and frequent commits.
+- Current progress:
+  - `infra-002` remains `in_progress`.
+  - No production implementation has started.
+- Next best action:
+  - Execute the plan with subagent-driven development, beginning with the centralized instance configuration task.
+- Known risk/blocker:
+  - Dual-instance verification will interact with the user's installed Craft Agents process and must preserve its data; implementation tests must use temporary directories until the final explicit smoke test.
+  - On this Windows machine, use `init.ps1`; the WSL `/bin/bash` path remains unavailable.
