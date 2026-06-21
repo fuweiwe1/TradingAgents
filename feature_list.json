@@ -1,6 +1,6 @@
 {
   "project": "StockCraft",
-  "last_updated": "2026-06-16",
+  "last_updated": "2026-06-21",
   "rules": {
     "single_active_feature": true,
     "passing_requires_evidence": true,
@@ -129,15 +129,24 @@
       "area": "storage",
       "title": "实现股票模块本地 SQLite 存储",
       "user_visible_behavior": "Watchlist、研究 run、步骤结果和报告可以本地持久化，应用重启后仍可查看。",
-      "status": "not_started",
+      "status": "passing",
       "verification": [
         "空用户目录启动时自动创建 schema。",
         "Watchlist 项可新增、查询、删除。",
         "研究报告可保存、列表查询、详情打开。",
         "renderer 不直接访问 SQLite。"
       ],
-      "evidence": [],
-      "notes": "计划使用 better-sqlite3。"
+      "evidence": [
+        "2026-06-16: 已新增 packages/server-core/src/stock/StockStorageService，使用 Bun 内置 bun:sqlite 初始化 stock_symbols、watchlist_items、research_runs、research_steps、research_reports 五张表。",
+        "2026-06-16: bun test packages/server-core/src/stock/stock-storage.test.ts 通过，覆盖空库 schema 初始化、Watchlist 新增/查询/删除、research run 五个 pending steps、报告保存/列表/详情。",
+        "2026-06-16: stockResearch:createRun 已返回 runId，并持久化关联 Craft session id 的 research run。",
+        "2026-06-16: 已新增 stockResearch:addWatchlistItem/listWatchlistItems/removeWatchlistItem/saveReport/listReports/getReport RPC；renderer 仅通过 ElectronAPI/channel-map 调用，不直接访问 SQLite。",
+        "2026-06-16: focused tests 通过：bun test packages/server-core/src/stock/stock-storage.test.ts packages/server-core/src/handlers/rpc/stock-research.test.ts packages/shared/src/protocol/__tests__/routing.test.ts apps/electron/src/shared/__tests__/ipc-channels.test.ts apps/electron/src/main/handlers/__tests__/registration.test.ts apps/electron/src/main/handlers/__tests__/registration-profiles.test.ts。",
+        "2026-06-16: typecheck 通过：bun run typecheck:shared；cd packages/server-core && bun run typecheck；cd apps/electron && bun run typecheck。",
+        "2026-06-16: powershell -NoProfile -ExecutionPolicy Bypass -File .\\init.ps1 通过。",
+        "2026-06-16: PR #2 发布前已合入本地 stock-001 CI baseline ancestor，避免重复显示 main 已有的 validate 修复；focused tests 27 个、shared/server/electron typecheck、init.ps1、json.tool、git diff --check 均通过。"
+      ],
+      "notes": "当前实现使用 Bun 内置 bun:sqlite，而不是原计划的 better-sqlite3；原因是 better-sqlite3 在本机安装超时且原生 binding 探针失败。SQLite 由 Electron/headless server 注入 server-core handler，默认路径为 ~/.craft-agent/stockcraft.sqlite。Reports/Watchlist UI 后续复用已新增 RPC。"
     },
     {
       "id": "stock-003",
@@ -145,15 +154,29 @@
       "area": "reports",
       "title": "实现独立报告中心",
       "user_visible_behavior": "用户可以查看历史股票研究报告、筛选、打开详情、跳回原会话并导出 Markdown。",
-      "status": "not_started",
+      "status": "passing",
       "verification": [
         "报告列表展示股票、市场、风险等级、创建时间。",
         "报告详情展示完整章节和免责声明。",
         "从报告可跳回关联 Craft session。",
         "Markdown 导出内容完整。"
       ],
-      "evidence": [],
-      "notes": "依赖 stock-002。"
+      "evidence": [
+        "2026-06-17: 用户确认采用独立 Reports 页面方案：左侧 Reports 入口、中间报告列表与筛选、右侧报告详情，并复用 stock-002 已有 list/get report RPC。",
+        "2026-06-17: 已创建 docs/superpowers/specs/2026-06-17-stock-003-reports-center-design.md，明确 renderer 本地筛选、按需加载详情、Open Session、Export MD、错误态和 TDD 验证范围。",
+        "2026-06-17: 已创建 docs/superpowers/plans/2026-06-17-stock-003-reports-center.md，将实现拆为 DTO/sessionId、报告筛选与导出 helpers、Reports route、页面状态/actions、ReportsPage UI、最终验证记录六个 TDD 任务。",
+        "2026-06-17: Task 1 complete: StockResearchReport DTO now exposes sessionId; stock-storage report list/detail select research_runs.session_id and map it through. Red/green command: bun test packages/server-core/src/stock/stock-storage.test.ts.",
+        "2026-06-17: Task 2 complete: added renderer-local report filtering/sorting helpers and Markdown export/filename helpers under apps/electron/src/renderer/stock-reports. Red/green command: bun test apps/electron/src/renderer/stock-reports/__tests__/report-filtering.test.ts apps/electron/src/renderer/stock-reports/__tests__/report-export.test.ts.",
+        "2026-06-17: Task 3 complete: added reports route and navigation state plumbing. Red command: bun test apps/electron/src/shared/__tests__/route-parser-reports.test.ts failed because reports route/parser/navigation support was missing. Green commands: focused reports route test passed; existing route/navigation tests passed; apps/electron typecheck passed.",
+        "2026-06-17: Task 4 complete: added report action helpers and page-state helpers. Red command: bun test apps/electron/src/renderer/stock-reports/__tests__/report-actions.test.ts apps/electron/src/renderer/stock-reports/__tests__/report-page-state.test.ts failed because report-actions and report-page-state modules were missing. Green command passed with 6 tests and 0 failures.",
+        "2026-06-17: Task 5 complete: added ReportsPage UI and sidebar navigation entry. Route guard command passed with existing reports route support; focused report/nav helper suite passed with 20 tests; apps/electron typecheck passed; lint:i18n:sorted and lint:i18n:parity passed after adding sidebar.reports to all locale files required by parity.",
+        "2026-06-17: Task 5 review fix: ReportsPage now hides previous workspace report/detail data during workspace transitions, refreshes selected detail with list refresh, exposes detail retry, and adds search/row selection accessibility attributes. Verification: focused report/nav helper suite passed; apps/electron typecheck passed; git diff --check passed with only CRLF warnings.",
+        "2026-06-17: Task 6 complete: Reports Center end-to-end implementation is verified. Focused report/storage/route/helper test suite passed with 43 tests, 0 failures, and 131 expectations. Shared, server-core, and electron typechecks passed. init.ps1, lint:i18n:sorted, lint:i18n:parity, python -m json.tool feature_list.json, and git diff --check passed.",
+        "2026-06-17: Final review fix: ReportsPage list-load error state now includes a contextual Retry button wired to the existing refresh flow. Verification: focused report/storage/route/helper test suite passed again with 43 tests and 0 failures; apps/electron typecheck passed.",
+        "2026-06-18: Final branch re-review found no new blocking issues. Fresh verification passed: 43 focused tests, shared/server-core/electron typechecks, init.ps1, i18n sorted/parity checks, JSON validation, and git diff --check. GitHub PR #2 remains open and mergeable; no PR exists yet for codex/stock-003-reports-center.",
+        "2026-06-18: Locally fast-forward merged codex/stock-003-reports-center into codex/stock-002-sqlite-storage. Post-merge verification passed with 43 focused tests, shared/server-core/electron typechecks, init.ps1, i18n sorted/parity checks, JSON validation, and git diff --check."
+      ],
+      "notes": "stock-003 Reports Center is passing: list/detail UI, local filtering, Open Session, Markdown export, route/sidebar integration, and review fixes are implemented and verified. It has been locally merged into codex/stock-002-sqlite-storage; PR #2 still needs to land or the combined branch needs to be pushed before these changes reach main."
     },
     {
       "id": "stock-004",
@@ -161,15 +184,28 @@
       "area": "watchlist",
       "title": "实现轻量 Watchlist",
       "user_visible_behavior": "用户可以添加、删除、分组自选股，并从自选股发起研究。",
-      "status": "not_started",
+      "status": "passing",
       "verification": [
         "添加 A股、港股、美股自选股。",
         "按分组查看自选股。",
         "删除自选股后列表更新。",
         "从自选股点击发起研究。"
       ],
-      "evidence": [],
-      "notes": "依赖 stock-002。"
+      "evidence": [
+        "2026-06-18: 用户确认采用独立 Watchlist 页面：左侧按分组展示自选股，右侧展示详情并编辑分组/备注。",
+        "2026-06-18: 用户确认同一股票可存在于多个分组、未选择分组归入“未分组”、分组按名称排序且组内按添加时间倒序。",
+        "2026-06-18: 用户确认从 Watchlist 直接发起研究、删除需要确认、添加时支持已有/新分组和可选备注、详情支持原子编辑。",
+        "2026-06-18: 已创建 docs/superpowers/specs/2026-06-18-stock-004-watchlist-design.md，明确新增 updateWatchlistItem RPC、页面数据流、错误处理和测试边界。",
+        "2026-06-18: 用户认可落盘 Spec；已创建 docs/superpowers/plans/2026-06-18-stock-004-watchlist.md，将实现拆分为存储更新、RPC/API、纯 renderer helpers、route/navigation、dialogs、页面接线和最终验证七个 TDD 任务。",
+        "2026-06-20: 完成原子 updateWatchlistItem 存储更新、重复目标分组保护、stockResearch:updateWatchlistItem RPC/ElectronAPI 接线，以及分组、筛选、选择、研究启动等纯 renderer helpers。",
+        "2026-06-20: 完成独立 watchlist route、侧栏入口、双栏 WatchlistPage、添加/删除确认弹窗、分组与备注编辑、直接发起 Stock Research、7 个 locale 的完整文案，以及工作区 A→B→A 和重叠异步请求守卫。",
+        "2026-06-20: 最终非注册 focused suite 通过 70 tests、0 failures、487 expectations；注册覆盖测试因与大套件并行时共享 mock 状态会产生假阴性，拆为独立进程后 registration + registration-profiles 通过 4 tests、0 failures。",
+        "2026-06-20: bun run typecheck:shared、packages/server-core typecheck、apps/electron typecheck、init.ps1、lint:i18n:sorted、lint:i18n:parity（6 locales，1484 keys）、python -m json.tool feature_list.json 和 git diff --check 均通过。",
+        "2026-06-20: 浏览器烟测确认 Vite 开发服务器可返回 HTTP 200，但普通浏览器环境没有 Electron preload，React 应用不会挂载；该限制不作为产品失败，页面接线按既定策略由 focused tests、Electron typecheck 和启动入口验证。",
+        "2026-06-20: 已将 codex/stock-004-watchlist 快进合并到本地 codex/stock-002-sqlite-storage；合并后 70 个核心测试、4 个独立注册测试、shared/server-core/electron typecheck、init.ps1、i18n sorted/parity、JSON 和 diff 检查通过。",
+        "2026-06-21: 恢复会话后确认本地与 origin/codex/stock-002-sqlite-storage 均指向 f5c90cd。重新验证 64 个核心 focused tests 与分文件运行的 4 个注册测试全部通过；shared/server-core/electron typecheck、init.ps1、i18n sorted/parity、JSON 和 diff 检查均通过。"
+      ],
+      "notes": "stock-004 Watchlist 已完成并通过验收：支持添加 A股/港股/美股、派生分组、搜索、备注与分组原子编辑、确认删除和直接发起研究。已快进合并并推送到 origin/codex/stock-002-sqlite-storage；feature_list 中已无未完成 feature。"
     }
   ]
 }

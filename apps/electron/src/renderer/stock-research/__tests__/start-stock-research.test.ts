@@ -5,6 +5,7 @@ import { startStockResearch } from '../start-stock-research'
 describe('startStockResearch', () => {
   it('creates a stock research run, refreshes sessions, and navigates to the created session', async () => {
     const createStockResearchRun = mock(async () => ({
+      runId: 'run-stock-1',
       sessionId: 'session-stock-1',
       symbol: {
         input: 'aapl',

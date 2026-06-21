@@ -35,7 +35,7 @@ export interface ParsedRoute {
 // Compound Route Types (new format)
 // =============================================================================
 
-export type NavigatorType = 'sessions' | 'sources' | 'skills' | 'automations' | 'settings'
+export type NavigatorType = 'sessions' | 'sources' | 'skills' | 'automations' | 'settings' | 'reports' | 'watchlist'
 
 export interface ParsedCompoundRoute {
   /** The navigator type */
@@ -61,7 +61,7 @@ export interface ParsedCompoundRoute {
  * Known prefixes that indicate a compound route
  */
 const COMPOUND_ROUTE_PREFIXES = [
-  'allSessions', 'flagged', 'archived', 'state', 'label', 'view', 'sources', 'skills', 'automations', 'settings'
+  'allSessions', 'flagged', 'archived', 'state', 'label', 'view', 'sources', 'skills', 'automations', 'settings', 'reports', 'watchlist'
 ]
 
 /**
@@ -93,6 +93,22 @@ export function parseCompoundRoute(route: string): ParsedCompoundRoute | null {
   if (segments.length === 0) return null
 
   const first = segments[0]
+
+  // Watchlist navigator
+  if (first === 'watchlist') {
+    if (segments.length === 1) {
+      return { navigator: 'watchlist', details: null }
+    }
+    return null
+  }
+
+  // Reports navigator
+  if (first === 'reports') {
+    if (segments.length === 1) {
+      return { navigator: 'reports', details: null }
+    }
+    return null
+  }
 
   // Settings navigator
   if (first === 'settings') {
@@ -259,6 +275,14 @@ export function parseCompoundRoute(route: string): ParsedCompoundRoute | null {
  * Build a compound route string from parsed state
  */
 export function buildCompoundRoute(parsed: ParsedCompoundRoute): string {
+  if (parsed.navigator === 'watchlist') {
+    return 'watchlist'
+  }
+
+  if (parsed.navigator === 'reports') {
+    return 'reports'
+  }
+
   if (parsed.navigator === 'settings') {
     if (!parsed.details) return 'settings'
     return `settings/${parsed.details.type}`
@@ -379,6 +403,14 @@ export function parseRoute(route: string): ParsedRoute | null {
  * Convert a parsed compound route to ParsedRoute format (type: 'view')
  */
 function convertCompoundToViewRoute(compound: ParsedCompoundRoute): ParsedRoute {
+  if (compound.navigator === 'watchlist') {
+    return { type: 'view', name: 'watchlist', params: {} }
+  }
+
+  if (compound.navigator === 'reports') {
+    return { type: 'view', name: 'reports', params: {} }
+  }
+
   // Settings
   if (compound.navigator === 'settings') {
     const subpage = compound.details?.type || 'app'
@@ -496,6 +528,14 @@ export function parseRouteToNavigationState(
  * Convert a ParsedCompoundRoute to NavigationState
  */
 function convertCompoundToNavigationState(compound: ParsedCompoundRoute): NavigationState {
+  if (compound.navigator === 'watchlist') {
+    return { navigator: 'watchlist', details: null }
+  }
+
+  if (compound.navigator === 'reports') {
+    return { navigator: 'reports', details: null }
+  }
+
   // Settings
   if (compound.navigator === 'settings') {
     if (!compound.details) {
@@ -613,6 +653,10 @@ function convertParsedRouteToNavigationState(parsed: ParsedRoute): NavigationSta
       return { navigator: 'skills', details: null }
     case 'automations':
       return { navigator: 'automations', details: null }
+    case 'watchlist':
+      return { navigator: 'watchlist', details: null }
+    case 'reports':
+      return { navigator: 'reports', details: null }
     case 'automation-info':
       if (parsed.id) {
         return {
@@ -699,6 +743,14 @@ function convertParsedRouteToNavigationState(parsed: ParsedRoute): NavigationSta
  * Convert NavigationState to ParsedCompoundRoute
  */
 function navigationStateToCompoundRoute(state: NavigationState): ParsedCompoundRoute {
+  if (state.navigator === 'watchlist') {
+    return { navigator: 'watchlist', details: null }
+  }
+
+  if (state.navigator === 'reports') {
+    return { navigator: 'reports', details: null }
+  }
+
   if (state.navigator === 'settings') {
     if (state.subpage === null) {
       return { navigator: 'settings', details: null }

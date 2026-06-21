@@ -58,6 +58,9 @@ pnpm-lock.yaml
 # Craft Agent local data (sessions, credentials, config)
 .craft-agent/
 
+# Superpowers brainstorming companion local screens
+.superpowers/
+
 # SSH keys and secrets
 *.pem
 *.key

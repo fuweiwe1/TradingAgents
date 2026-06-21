@@ -3,10 +3,10 @@
 ## 当前已验证状态
 
 - 仓库根目录：`C:\craft_agents`
-- 当前目录状态：已初始化为 git 仓库，当前分支 `stock-001-research-run`，remote `origin` 指向 `https://github.com/fuweiwe1/TradingAgents.git`。
+- 当前目录状态：已初始化为 git 仓库，当前分支 `codex/stock-003-reports-center`，remote `origin` 指向 `https://github.com/fuweiwe1/TradingAgents.git`。
 - 标准启动路径：Unix/Git Bash 使用 `bash ./init.sh`；Windows 无 Bash 时使用 `powershell -ExecutionPolicy Bypass -File .\init.ps1`。
 - 标准验证路径：`powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1`、`bun install --frozen-lockfile`、`bun run typecheck:shared`。
-- 当前最高优先级未完成功能：`stock-002`，实现股票模块本地 SQLite 存储。
+- 当前最高优先级未完成功能：`stock-003`，实现独立报告中心。
 - 当前工作流基线：`setup-001`、`spec-001`、`infra-001` 已通过；Craft Agents OSS 基线与 Bun 依赖验证可恢复。
 - 当前 blocker：
   - 当前环境的 `bash ./init.sh` 仍会进入损坏的 WSL，失败原因是 `/bin/bash` 不存在；Windows 当前使用 `init.ps1` 作为标准入口。
@@ -221,23 +221,476 @@
 
 ### Session 009
 
-- Date: 2026-06-16
-- Goal: Apply the GitHub Actions `validate` baseline fix to PR #1 (`stock-001-research-run`) without mixing in stock-002 work.
-- Root cause:
-  - `packages/session-tools-core/tsconfig.json` and `packages/pi-agent-server/tsconfig*.json` extended missing `../../tsconfig.base.json`.
-  - Without that shared base config, TypeScript fell back to an old target and produced the GitHub errors for missing `tsconfig.base.json`, `Set` iteration/downleveling, Unicode regex flags, and third-party `.d.ts` files.
-  - After restoring the base config, `packages/pi-agent-server` exposed three real strict nullability/indexing errors.
-  - Later CI i18n steps also had baseline issues: locale files were unsorted, and `lint:i18n:coverage` referenced a missing script.
-- Done:
-  - Cherry-picked the CI baseline fix onto `stock-001-research-run`.
-  - Added root `tsconfig.base.json` with shared strict ESNext/bundler compiler options.
-  - Fixed `packages/pi-agent-server` indexed access/nullability issues in prefetch logging, DuckDuckGo redirect extraction, and web-fetch content-type parsing.
-  - Added `scripts/check-i18n-coverage.ts` for static `t(...)`, `i18n.t(...)`, and `<Trans i18nKey>` key coverage against `en.json`, including plural base-key handling.
-  - Updated `feature_list.json` with infra evidence and current validation limits.
+- 日期：2026-06-16
+- 本轮目标：继续 `stock-002`，实现股票模块本地 SQLite 存储的第一个可验收切片。
+- 已完成：
+  - 创建并切换到分支 `codex/stock-002-sqlite-storage`。
+  - 创建 `docs/superpowers/plans/2026-06-16-stock-002-sqlite-storage.md`。
+  - 新增 `packages/server-core/src/stock/StockStorageService`，负责初始化 `stock_symbols`、`watchlist_items`、`research_runs`、`research_steps`、`research_reports` 五张表。
+  - 新增 Watchlist 新增/列表/删除、research run 创建、五步 research step 初始化、报告保存/列表/详情读取能力。
+  - `stockResearch:createRun` 现在返回 `runId`，并持久化一个关联 Craft session id 的 research run。
+  - 新增并分类 RPC：`stockResearch:addWatchlistItem`、`stockResearch:listWatchlistItems`、`stockResearch:removeWatchlistItem`、`stockResearch:saveReport`、`stockResearch:listReports`、`stockResearch:getReport`。
+  - 将新 RPC 暴露到 Electron `CHANNEL_MAP` 和 `ElectronAPI` 类型；renderer 仍然只通过 RPC/ElectronAPI 访问，不直接访问 SQLite。
+  - Electron main 与 headless server 注入同一个 server-side stock storage service，数据库路径为 `~/.craft-agent/stockcraft.sqlite`。
+- TDD 记录：
+  - `stock-storage.test.ts` 先因 `./stock-storage` 缺失失败，再实现服务后通过。
+  - `stock-research.test.ts` 先因 `runId` 缺失和新 handler 未注册失败，再补齐 RPC 契约与 handler 后通过。
+  - `ipc-channels.test.ts` 先因新 channel 未加入稳定清单失败，再补齐清单后通过。
+- 运行过的验证：
+  - `bun test packages/server-core/src/stock/stock-storage.test.ts`：通过，3 tests。
+  - `bun test packages/server-core/src/handlers/rpc/stock-research.test.ts packages/shared/src/protocol/__tests__/routing.test.ts`：通过，13 tests。
+  - `bun test apps/electron/src/shared/__tests__/ipc-channels.test.ts apps/electron/src/main/handlers/__tests__/registration.test.ts apps/electron/src/main/handlers/__tests__/registration-profiles.test.ts`：通过，9 tests。
+  - focused 收尾复验：`bun test packages/server-core/src/stock/stock-storage.test.ts packages/server-core/src/handlers/rpc/stock-research.test.ts packages/shared/src/protocol/__tests__/routing.test.ts apps/electron/src/shared/__tests__/ipc-channels.test.ts apps/electron/src/main/handlers/__tests__/registration.test.ts apps/electron/src/main/handlers/__tests__/registration-profiles.test.ts` 通过，25 tests。
+  - `bun test apps/electron/src/renderer/stock-research/__tests__/start-stock-research.test.ts`：通过，2 tests。
+  - `bun run typecheck:shared`：通过。
+  - `cd packages/server-core && bun run typecheck`：通过。
+  - `cd apps/electron && bun run typecheck`：通过。
+  - `python -m json.tool feature_list.json`：通过。
+  - `powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1`：通过。
+  - `git diff --check`：通过，仅有 Windows LF/CRLF 提醒。
+- 偏差与风险：
+  - Spec/feature notes 原计划使用 `better-sqlite3`。本机两次 `bun add better-sqlite3 @types/better-sqlite3` 超时，且实际探针报 `Could not locate the bindings file`，原生 binding 未构建成功；为保持当前 Bun workspace 可验证，本轮改用 Bun 内置 `bun:sqlite`。
+  - 当前数据库为 app/server 级 `~/.craft-agent/stockcraft.sqlite`，未按 workspace 拆分；当前验收未要求 workspace 隔离，后续若 Reports/Watchlist 需要跨 workspace 隔离，应加 `workspace_id` 或 workspace-scoped database。
+  - Windows/WSL 环境运行 `bash ./init.sh` 仍会因 `/bin/bash` 不存在失败；当前平台继续使用 `init.ps1`。
+- 当前进度：
+  - `stock-002` 已标记为 `passing`：空数据库 schema、Watchlist 增删查、报告保存/列表/详情、renderer 不直连 SQLite 均有自动化或架构证据。
+  - 下一步最高优先级功能为 `stock-003`：实现独立 Reports 中心。
+
+### Session 010
+
+- 日期：2026-06-16
+- 本轮目标：修复 GitHub Actions `validate` 基线失败，并将该修复应用到 PR #1。
+- 根因：
+  - `packages/session-tools-core/tsconfig.json` 和 `packages/pi-agent-server/tsconfig*.json` 继承了缺失的 `../../tsconfig.base.json`。
+  - 缺少共享 base config 后，TypeScript 退回旧 target，触发 GitHub 日志里的 `tsconfig.base.json` 缺失、`Set` 迭代、Unicode regex flag、第三方 `.d.ts` 等错误。
+  - 补回 base config 后，`packages/pi-agent-server` 暴露出 3 个真实 strict nullability/indexing 错误。
+  - 后续 CI i18n 步骤还有基线问题：locale 文件未排序，且 `lint:i18n:coverage` 引用了缺失脚本。
+- 已完成：
+  - 在 `stock-001-research-run` 上 cherry-pick CI baseline fix 并推送，PR #1 的 Validate 后续通过。
+  - 新增根 `tsconfig.base.json`，包含共享 strict ESNext/bundler 编译选项。
+  - 修复 `packages/pi-agent-server` 在 prefetch logging、DuckDuckGo redirect extraction、web-fetch content-type parsing 中的索引/可空类型问题。
+  - 新增 `scripts/check-i18n-coverage.ts`，静态检查 `t(...)`、`i18n.t(...)`、`<Trans i18nKey>` key 是否存在于 `en.json`，并处理 plural base-key。
+  - 运行 `bun run sort-locales` 排序所有 locale JSON。
+  - 更新 `feature_list.json`，记录 infra 证据和本机 validate 限制。
+- 验证：
+  - `powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1`：通过。
+  - `cmd /c "cd /d C:\craft_agents\packages\session-tools-core && bun run tsc --noEmit"`：通过。
+  - `cmd /c "cd /d C:\craft_agents\packages\pi-agent-server && bun run typecheck"`：通过。
+  - `bun run typecheck:all`：通过。
+  - `bun run test:shared:all`：在 `validate:ci` 进入 doc-tools 前通过。
+  - `bun run lint:i18n:parity`：通过。
+  - `bun run lint:i18n:sorted`：通过。
+  - `bun run lint:i18n:coverage`：通过，检查 1077 个静态 key。
+  - `bun run validate:ci`：已越过原始 GitHub typecheck 失败和 shared tests，本机停在 `test:doc-tools`，原因是 Windows 环境没有 `python3` 命令。
+  - `python -m unittest ...doc tool smoke...`：本机停止，原因是 `apps/electron/resources/bin/win32-x64/uv.exe` 不存在且 `uv` 不在 PATH。
+- 剩余风险/blocker：
+  - 当前 Windows 机器缺少 `python3`/`uv`，无法完整本地跑完 `validate:ci`；GitHub Actions 在 Ubuntu 上会安装 uv。
+
+### Session 011
+
+- 日期：2026-06-16
+- 本轮目标：PR #1 合并到 main 后，继续整理 `stock-002` 分支并准备发布。
+- 已完成：
+  - 按开工流程确认当前目录为 `C:\craft_agents`，读取 `claude-progress.md` 与 `feature_list.json`，查看最近提交，并运行 Windows 标准入口 `powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1`。
+  - 切换到 `codex/stock-002-sqlite-storage` 分支。
+  - 确认该分支包含 `f0b1df4 实现股票模块 SQLite 存储` 与 `80c0bbd 修复 GitHub validate 基线`。
+  - 复查 `stock-002` 存储实现：`StockStorageService` 使用 Bun 内置 `bun:sqlite`，由 Electron/headless server 注入 server-core handler；renderer 仅通过 RPC/ElectronAPI 调用，不直接访问 SQLite。
+  - 修复 `feature_list.json` 中 `stock-002` evidence/notes 的乱码文本，并明确记录当前实现采用 `bun:sqlite` 而非 `better-sqlite3` 的原因。
+- 验证记录：
+  - `powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1`：通过。
+  - `bun test packages/server-core/src/stock/stock-storage.test.ts packages/server-core/src/handlers/rpc/stock-research.test.ts apps/electron/src/renderer/stock-research/__tests__/start-stock-research.test.ts apps/electron/src/shared/__tests__/ipc-channels.test.ts`：通过，15 tests，0 fail。
+  - `bun run typecheck:shared`：通过。
+  - `cd packages/server-core && bun run typecheck`：通过。
+  - `cd apps/electron && bun run typecheck`：通过。
+- 当前进度：
+  - `stock-002` 已在功能清单中保持 `passing`；本轮只修正持久化证据文字。
+  - 已创建 PR #2：`https://github.com/fuweiwe1/TradingAgents/pull/2`，当前为 Draft。
+
+### Session 012
+
+- 日期：2026-06-16
+- 本轮目标：继续 PR #2 发布流程，去除重复 CI baseline 差异。
+- 已完成：
+  - 发现 PR #2 diff 中仍包含 `tsconfig.base.json`、`scripts/check-i18n-coverage.ts` 和 `packages/pi-agent-server` CI baseline 文件；这些内容已通过 PR #1 合进 main，不应作为 `stock-002` 的新增差异。
+  - 尝试 `git fetch origin main` 失败，原因是当前网络连接 GitHub 443 超时。
+  - 改用本地已存在的 `stock-001-research-run` 分支执行 `git merge stock-001-research-run --no-edit`，使 `codex/stock-002-sqlite-storage` 包含 main 已有的 CI baseline ancestor，避免 PR diff 重复显示该修复。
+  - 合并仅在 `claude-progress.md` 产生冲突；已保留 `stock-002` 记录、CI baseline 记录和 PR #2 发布记录。
+- 验证记录：
+  - `python -m json.tool feature_list.json`：通过。
+  - `powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1`：通过。
+  - `git diff --check`：通过。
+  - `bun test packages/server-core/src/stock/stock-storage.test.ts packages/server-core/src/handlers/rpc/stock-research.test.ts packages/shared/src/protocol/__tests__/routing.test.ts apps/electron/src/shared/__tests__/ipc-channels.test.ts apps/electron/src/main/handlers/__tests__/registration.test.ts apps/electron/src/main/handlers/__tests__/registration-profiles.test.ts apps/electron/src/renderer/stock-research/__tests__/start-stock-research.test.ts`：通过，27 tests，0 fail。
+  - `bun run typecheck:shared`：通过。
+  - `cd packages/server-core && bun run typecheck`：通过。
+  - `cd apps/electron && bun run typecheck`：通过。
+- 当前进度：
+  - 已生成 merge commit `8c6059d`，`codex/stock-002-sqlite-storage` 当前比远端多 2 个提交。
+  - 下一步是推送分支并重新确认 PR #2 diff 与 GitHub Actions 状态。
+
+### Session 013
+
+- 日期：2026-06-17
+- 本轮目标：为 `stock-003` 独立 Reports 中心确认设计并落盘 spec。
+- 已完成：
+  - 按开工流程确认当前目录为 `C:\craft_agents`，读取 `claude-progress.md` 与 `feature_list.json`，查看最近提交，并运行 Windows 标准入口 `powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1`。
+  - 确认 `stock-003` 是最高优先级未完成项，目标为独立 Reports 页面。
+  - 与用户确认采用 A 方案：独立 Reports 页面，复用 `stock-002` 已有 `listStockResearchReports` / `getStockResearchReport` RPC，renderer 本地筛选。
+  - 用视觉草图确认页面信息架构：左侧 Reports 入口、中间报告列表与筛选、右侧报告详情，详情提供 `Open Session` 与 `Export MD`。
+  - 发现 `origin/main` 尚未包含 PR #2 的 stock storage RPC，因此将 `codex/stock-003-reports-center` 基于 `codex/stock-002-sqlite-storage` 创建；待 PR #2 合并后再整理 base。
+  - 创建 `docs/superpowers/specs/2026-06-17-stock-003-reports-center-design.md`。
+  - 用户确认 spec 后，使用 writing-plans skill 创建 `docs/superpowers/plans/2026-06-17-stock-003-reports-center.md`，把实现拆成 6 个 TDD 任务。
+- 当前进度：
+  - `stock-003` 设计与实现计划已落盘，尚未开始实现代码。
+  - 下一步是按计划执行，推荐使用 subagent-driven development；若用户选择 inline，也可用 executing-plans 顺序执行。
+
+### Session 014
+
+- Date: 2026-06-17
+- Goal: Execute StockCraft Reports Center Task 1, adding `sessionId` to report DTOs.
+- Completed:
+  - Followed TDD: updated the existing `creates research runs with five pending steps and stores reports` test first.
+  - Confirmed the red test failed because `listResearchReports()` did not include `sessionId`.
+  - Added `sessionId: string` to `StockResearchReport`.
+  - Selected `research_runs.session_id` for report rows and mapped it through `mapResearchReportRow`.
 - Verification:
-  - `powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1`: passed before cherry-pick.
-  - Full post-cherry-pick verification is required before push.
-- Remaining risk/blocker:
-  - Full local `validate:ci` cannot be completed on this Windows machine until `python3`/`uv` are available. GitHub Actions installs uv and runs on Ubuntu, so this is expected to differ from local.
-- Next step:
-  - Finish cherry-pick, run final checks, and push `stock-001-research-run` to update PR #1.
+  - `powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1`: passed.
+  - Baseline `bun test packages/server-core/src/stock/stock-storage.test.ts`: passed before edits.
+  - Red `bun test packages/server-core/src/stock/stock-storage.test.ts`: failed at the report list assertion because `sessionId` was missing.
+  - Green `bun test packages/server-core/src/stock/stock-storage.test.ts`: passed, 3 tests, 0 fail, 9 expectations.
+- Current progress:
+  - `stock-003` remains `in_progress`; Task 1 is complete and committed.
+  - Next task should continue the Reports Center plan from `docs/superpowers/plans/2026-06-17-stock-003-reports-center.md`.
+
+### Session 015
+
+- Date: 2026-06-17
+- Goal: Execute StockCraft Reports Center Task 2, adding report filtering and export helpers.
+- Completed:
+  - Followed TDD: created helper tests before production modules existed.
+  - Confirmed the red test failed because `../report-filtering` and `../report-export` were missing.
+  - Added `filterStockReports` and `sortStockReportsNewestFirst` in `apps/electron/src/renderer/stock-reports/report-filtering.ts`.
+  - Added `formatStockReportMarkdown` and `buildStockReportFilename` in `apps/electron/src/renderer/stock-reports/report-export.ts`; the filename helper preserves display symbol casing while lower-casing the title slug.
+- Verification:
+  - `bun test apps/electron/src/renderer/stock-reports/__tests__/report-filtering.test.ts apps/electron/src/renderer/stock-reports/__tests__/report-export.test.ts`: red failed with missing module errors before implementation.
+  - `bun test apps/electron/src/renderer/stock-reports/__tests__/report-filtering.test.ts apps/electron/src/renderer/stock-reports/__tests__/report-export.test.ts`: green passed, 5 tests, 0 fail, 16 expectations.
+- Current progress:
+  - `stock-003` remains `in_progress`; Task 2 is complete.
+  - Next task should add the Reports route and navigation state from `docs/superpowers/plans/2026-06-17-stock-003-reports-center.md`.
+
+### Session 016
+
+- Date: 2026-06-17
+- Goal: Execute StockCraft Reports Center Task 3, adding the Reports route and navigation state.
+- Completed:
+  - Followed TDD: created `apps/electron/src/shared/__tests__/route-parser-reports.test.ts` before production route changes.
+  - Confirmed the red test failed because `routes.view.reports`, compound parsing, navigation-state conversion, and reports roundtrip support were missing.
+  - Added `routes.view.reports()` returning `reports`.
+  - Added `ReportsNavigationState`, `isReportsNavigation`, and reports handling for navigation state keys.
+  - Added reports handling to compound route parsing, parsed view conversion, navigation-state conversion, and route rebuilding.
+  - Re-exported `isReportsNavigation` from `NavigationContext`.
+  - Fixed the compile fallout in pure navigation helper detail-mode handling: reports is navigator-only and returns `false`.
+- Verification:
+  - Startup: `powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1` passed.
+  - Baseline smoke before edits: `bun test apps/electron/src/shared/__tests__/route-parser-automations.test.ts apps/electron/src/renderer/contexts/__tests__/navigation-history-key.test.ts apps/electron/src/renderer/contexts/__tests__/navigation-reconcile.test.ts` passed, 21 tests, 0 fail.
+  - Red: `bun test apps/electron/src/shared/__tests__/route-parser-reports.test.ts` failed as expected, 0 pass / 5 fail, with missing reports route/parser/navigation support.
+  - Green: `bun test apps/electron/src/shared/__tests__/route-parser-reports.test.ts` passed, 5 tests, 0 fail.
+  - Follow-on red for typecheck fallout: `bun test apps/electron/src/renderer/lib/__tests__/nav-helpers.test.ts` failed because reports detail-mode returned `undefined`.
+  - Follow-on green: `bun test apps/electron/src/renderer/lib/__tests__/nav-helpers.test.ts` passed, 1 test, 0 fail.
+  - Regression: `bun test apps/electron/src/shared/__tests__/route-parser-automations.test.ts apps/electron/src/renderer/contexts/__tests__/navigation-history-key.test.ts apps/electron/src/renderer/contexts/__tests__/navigation-reconcile.test.ts` passed, 21 tests, 0 fail.
+  - Typecheck: `cd apps/electron && bun run typecheck` passed.
+- Current progress:
+  - `stock-003` remains `in_progress`; Task 3 is complete.
+  - Next task should continue the Reports Center plan from `docs/superpowers/plans/2026-06-17-stock-003-reports-center.md`.
+
+### Session 017
+
+- Date: 2026-06-17
+- Goal: Execute StockCraft Reports Center Task 4, adding report action and page-state helpers.
+- Completed:
+  - Followed TDD: created `report-actions.test.ts` and `report-page-state.test.ts` before production modules existed.
+  - Confirmed the red test failed because `../report-actions` and `../report-page-state` were missing.
+  - Added `openStockReportSession`, `exportStockReportMarkdown`, and `downloadMarkdownFile` in `apps/electron/src/renderer/stock-reports/report-actions.ts`.
+  - Added `chooseInitialReportId` and `shouldLoadReportDetail` in `apps/electron/src/renderer/stock-reports/report-page-state.ts`.
+- Verification:
+  - Startup: `powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1` passed.
+  - Red: `bun test apps/electron/src/renderer/stock-reports/__tests__/report-actions.test.ts apps/electron/src/renderer/stock-reports/__tests__/report-page-state.test.ts` failed with missing module errors for `../report-actions` and `../report-page-state`.
+  - Green: `bun test apps/electron/src/renderer/stock-reports/__tests__/report-actions.test.ts apps/electron/src/renderer/stock-reports/__tests__/report-page-state.test.ts` passed, 6 tests, 0 fail, 8 expectations.
+- Current progress:
+  - `stock-003` remains `in_progress`; Task 4 is complete.
+  - Next task should render the Reports page and navigation entry from `docs/superpowers/plans/2026-06-17-stock-003-reports-center.md`.
+
+### Session 018
+
+- Date: 2026-06-17
+- Goal: Execute StockCraft Reports Center Task 5, rendering the Reports page and navigation entry.
+- Completed:
+  - Added the explicit top-level reports route assertion requested for this UI wiring slice; it passed immediately because Task 3 had already established the route contract.
+  - Created `apps/electron/src/renderer/pages/ReportsPage.tsx`.
+  - ReportsPage loads report lists through `window.electronAPI.listStockResearchReports(workspaceId)` only when `workspaceId` is present.
+  - ReportsPage filters and sorts locally with the existing report helpers, selects the initial/current report with `chooseInitialReportId`, and loads details on demand with `getStockResearchReport(workspaceId, selectedReportId)`.
+  - Added list/detail loading, error, empty states; detail actions for Open Session and Export MD; report metadata, summary, markdown body, and disclaimer rendering.
+  - Exported ReportsPage from the pages barrel and rendered it from `MainContentPanel` for reports navigation.
+  - Added the left-sidebar Reports entry in `AppShell` using the existing navigate/routes pattern and `FileText` icon.
+  - Added `sidebar.reports` to `en` and `zh-Hans`; i18n parity also required adding the same key to `de`, `es`, `hu`, `ja`, and `pl`.
+- Verification:
+  - Startup: `powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1` passed.
+  - Route guard after test insertion: `bun test apps/electron/src/shared/__tests__/route-parser-reports.test.ts` passed, 6 tests, 0 fail.
+  - Focused suite: `bun test apps/electron/src/shared/__tests__/route-parser-reports.test.ts apps/electron/src/renderer/stock-reports/__tests__/report-filtering.test.ts apps/electron/src/renderer/stock-reports/__tests__/report-export.test.ts apps/electron/src/renderer/stock-reports/__tests__/report-actions.test.ts apps/electron/src/renderer/stock-reports/__tests__/report-page-state.test.ts apps/electron/src/renderer/lib/__tests__/nav-helpers.test.ts` passed, 20 tests, 0 fail.
+  - Typecheck: `cd apps/electron; bun run typecheck` passed.
+  - Locale sorted check: `bun run lint:i18n:sorted` passed.
+  - Locale parity check: first failed because `sidebar.reports` was missing from `de`, `es`, `hu`, `ja`, and `pl`; after adding those narrow keys, `bun run lint:i18n:parity` passed.
+- Current progress:
+  - `stock-003` remains `in_progress`; Task 5 is complete.
+  - Next task should perform the final verification/recording slice from `docs/superpowers/plans/2026-06-17-stock-003-reports-center.md`.
+
+### Session 019
+
+- Date: 2026-06-17
+- Goal: Address Task 5 code quality review for ReportsPage state refresh behavior.
+- Completed:
+  - Verified the review finding in `apps/electron/src/renderer/pages/ReportsPage.tsx`: detail load skipping was keyed only by selected report id, and list refresh did not force selected detail reload.
+  - Added workspace-tagged report/detail rendering so reports and details from the previous workspace are hidden immediately during workspace transitions.
+  - Reset list-derived and detail state on every `workspaceId` change.
+  - Added `detailRefreshKey` and loaded refresh tracking so Refresh and Retry can refetch the selected detail even when the selected report id is unchanged.
+  - Updated the Refresh button to reload both the list and selected detail.
+  - Added a detail error Retry button.
+  - Added `aria-label="Search reports"` to the search input and `aria-current` to selected report rows.
+- Verification:
+  - Startup: `powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1` passed.
+  - Focused suite: `bun test apps/electron/src/shared/__tests__/route-parser-reports.test.ts apps/electron/src/renderer/stock-reports/__tests__/report-filtering.test.ts apps/electron/src/renderer/stock-reports/__tests__/report-export.test.ts apps/electron/src/renderer/stock-reports/__tests__/report-actions.test.ts apps/electron/src/renderer/stock-reports/__tests__/report-page-state.test.ts apps/electron/src/renderer/lib/__tests__/nav-helpers.test.ts` passed, 20 tests, 0 fail.
+  - Typecheck: `cd apps/electron; bun run typecheck` passed.
+  - `python -m json.tool feature_list.json` passed.
+  - `git diff --check` passed with only expected CRLF warnings.
+- Test note:
+  - No component-level test was added because there is no established nearby React DOM test harness for `ReportsPage`; verification used the existing focused route/helper tests plus Electron typecheck.
+- Current progress:
+  - `stock-003` remains `in_progress`; Task 5 code quality review fixes are complete.
+
+### Session 020
+
+- Date: 2026-06-17
+- Goal: Complete StockCraft Reports Center Task 6, final verification and persistent handoff.
+- Completed:
+  - Marked `stock-003` as `passing` in `feature_list.json`.
+  - Recorded final Reports Center evidence after the implementation and review-fix commits.
+  - Confirmed the Reports Center now covers report list/detail UI, local filtering, route/sidebar integration, Open Session, Markdown export, and workspace-safe refresh/retry behavior.
+- Verification:
+  - Focused suite passed: `bun test packages/server-core/src/stock/stock-storage.test.ts packages/server-core/src/handlers/rpc/stock-research.test.ts apps/electron/src/shared/__tests__/route-parser-reports.test.ts apps/electron/src/shared/__tests__/route-parser-automations.test.ts apps/electron/src/renderer/stock-reports/__tests__/report-filtering.test.ts apps/electron/src/renderer/stock-reports/__tests__/report-export.test.ts apps/electron/src/renderer/stock-reports/__tests__/report-actions.test.ts apps/electron/src/renderer/stock-reports/__tests__/report-page-state.test.ts apps/electron/src/shared/__tests__/ipc-channels.test.ts apps/electron/src/renderer/lib/__tests__/nav-helpers.test.ts` passed with 43 tests, 0 failures, and 131 expectations.
+  - `bun run typecheck:shared` passed.
+  - `cd packages/server-core && bun run typecheck` passed.
+  - `cd apps/electron && bun run typecheck` passed.
+  - `powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1` passed.
+  - `bun run lint:i18n:sorted` passed.
+  - `bun run lint:i18n:parity` passed with 6 locales and 1437 keys each.
+  - `python -m json.tool feature_list.json` passed.
+  - `git diff --check` passed after final record edits.
+- Current progress:
+  - `stock-003` is now `passing`.
+  - Next highest-priority feature is `stock-004`, the lightweight Watchlist.
+- Known risk/blocker:
+  - `codex/stock-003-reports-center` is still temporarily based on `codex/stock-002-sqlite-storage` until PR #2 lands.
+  - On this Windows machine, `bash ./init.sh` still enters the broken WSL path where `/bin/bash` is missing; the standard local startup path remains `init.ps1`.
+
+### Session 021
+
+- Date: 2026-06-17
+- Goal: Address final code review feedback for the Reports Center.
+- Completed:
+  - Verified the final reviewer finding: the report list load-error branch showed the error text but did not include the contextual Retry action required by the spec.
+  - Added a local Retry button to the list error state in `ReportsPage`, wired to the existing refresh flow.
+  - Updated `feature_list.json` with the review-fix evidence.
+- Verification:
+  - Focused suite passed again: `bun test packages/server-core/src/stock/stock-storage.test.ts packages/server-core/src/handlers/rpc/stock-research.test.ts apps/electron/src/shared/__tests__/route-parser-reports.test.ts apps/electron/src/shared/__tests__/route-parser-automations.test.ts apps/electron/src/renderer/stock-reports/__tests__/report-filtering.test.ts apps/electron/src/renderer/stock-reports/__tests__/report-export.test.ts apps/electron/src/renderer/stock-reports/__tests__/report-actions.test.ts apps/electron/src/renderer/stock-reports/__tests__/report-page-state.test.ts apps/electron/src/shared/__tests__/ipc-channels.test.ts apps/electron/src/renderer/lib/__tests__/nav-helpers.test.ts` passed with 43 tests, 0 failures, and 131 expectations.
+  - `cd apps/electron && bun run typecheck` passed.
+- Current progress:
+  - `stock-003` remains `passing`; awaiting final re-review and branch finishing.
+
+### Session 022
+
+- Date: 2026-06-18
+- Goal: Resume the Reports Center work, perform final re-review, and determine the safe branch-finishing path.
+- Completed:
+  - Restored context from `claude-progress.md`, `feature_list.json`, recent commits, and the implementation plan.
+  - Confirmed the working tree is clean on `codex/stock-003-reports-center`.
+  - Reviewed the complete Reports Center diff against `codex/stock-002-sqlite-storage`; no new Critical or Important issue was found.
+  - Checked GitHub state: PR #2 (`codex/stock-002-sqlite-storage` into `main`) remains open and mergeable, and no PR exists for `codex/stock-003-reports-center`.
+- Verification:
+  - `powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1`: passed.
+  - Focused suite passed: `bun test packages/server-core/src/stock/stock-storage.test.ts packages/server-core/src/handlers/rpc/stock-research.test.ts apps/electron/src/shared/__tests__/route-parser-reports.test.ts apps/electron/src/shared/__tests__/route-parser-automations.test.ts apps/electron/src/renderer/stock-reports/__tests__/report-filtering.test.ts apps/electron/src/renderer/stock-reports/__tests__/report-export.test.ts apps/electron/src/renderer/stock-reports/__tests__/report-actions.test.ts apps/electron/src/renderer/stock-reports/__tests__/report-page-state.test.ts apps/electron/src/shared/__tests__/ipc-channels.test.ts apps/electron/src/renderer/lib/__tests__/nav-helpers.test.ts` with 43 tests, 0 failures, and 131 expectations.
+  - `bun run typecheck:shared`: passed.
+  - `cd packages/server-core && bun run typecheck`: passed.
+  - `cd apps/electron && bun run typecheck`: passed.
+  - `bun run lint:i18n:sorted`: passed.
+  - `bun run lint:i18n:parity`: passed with 6 locales and 1437 keys each.
+  - `python -m json.tool feature_list.json`: passed.
+  - `git diff --check`: passed.
+- Current progress:
+  - `stock-003` remains `passing`.
+  - Branch finishing is waiting on a user choice: merge locally, create a stacked PR, keep the branch, or discard it.
+- Known risk/blocker:
+  - PR #2 is not merged, so a Reports Center PR opened now would need to target `codex/stock-002-sqlite-storage` as a stacked PR or temporarily include the storage changes when targeting `main`.
+  - On this Windows machine, `bash ./init.sh` still enters the broken WSL path where `/bin/bash` is missing; use `init.ps1`.
+
+### Session 023
+
+- Date: 2026-06-18
+- Goal: Locally merge the completed Reports Center branch into `codex/stock-002-sqlite-storage`.
+- Completed:
+  - Confirmed `codex/stock-003-reports-center` was clean and reran its focused tests and typechecks before integration.
+  - Switched to `codex/stock-002-sqlite-storage`.
+  - Attempted `git pull --ff-only`; it failed because GitHub port 443 timed out. The local branch matched the cached `origin/codex/stock-002-sqlite-storage` ref before the attempt.
+  - Fast-forward merged `codex/stock-003-reports-center` into the local `codex/stock-002-sqlite-storage` branch.
+  - Preserved the local `.superpowers/brainstorm/` directory; the merged `.gitignore` entry now ignores it.
+  - Re-ran verification on the merged result.
+- Verification:
+  - Focused suite passed with 43 tests, 0 failures, and 131 expectations.
+  - `bun run typecheck:shared`: passed.
+  - `cd packages/server-core && bun run typecheck`: passed.
+  - `cd apps/electron && bun run typecheck`: passed.
+  - `powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1`: passed.
+  - `bun run lint:i18n:sorted`: passed after running the standard `bun run sort-locales`; the rewrite produced no actual Git content diff.
+  - `bun run lint:i18n:parity`: passed with 6 locales and 1437 keys each.
+  - `python -m json.tool feature_list.json`: passed.
+  - `git diff --check`: passed.
+- Current progress:
+  - `stock-003` remains `passing` and is locally integrated into `codex/stock-002-sqlite-storage`.
+  - The next highest-priority feature remains `stock-004`, the lightweight Watchlist.
+- Known risk/blocker:
+  - The combined local branch is ahead of `origin/codex/stock-002-sqlite-storage`; no push was requested in this session.
+  - GitHub network access timed out during `git pull --ff-only`, so remote freshness beyond the cached origin ref could not be confirmed.
+  - On this Windows machine, use `init.ps1`; the WSL `/bin/bash` path remains unavailable.
+
+### Session 024
+
+- Date: 2026-06-18
+- Goal: Confirm the product and technical design for `stock-004`, the lightweight Watchlist.
+- Completed:
+  - Confirmed the pushed remote branch now points to local commit `d286ca8`.
+  - Created and switched to `codex/stock-004-watchlist`.
+  - Used the visual companion to compare three Watchlist layouts; the user selected a standalone top-level page.
+  - Confirmed product behavior:
+    - Select an existing group or type a new group while adding.
+    - Allow the same symbol in multiple groups.
+    - Start research immediately and navigate to the new Craft session.
+    - Require confirmation before removal.
+    - Accept an optional note during creation.
+    - Edit group and note from the detail pane.
+    - Normalize missing groups to `未分组`.
+    - Sort groups by name and entries by newest first.
+  - Confirmed the recommended technical path: add an atomic `updateWatchlistItem` RPC while keeping groups as derived strings instead of adding a groups table.
+  - Confirmed workspace-safe loading, duplicate-conflict behavior, error handling, and test boundaries.
+  - Created `docs/superpowers/specs/2026-06-18-stock-004-watchlist-design.md`.
+- Current progress:
+  - `stock-004` is now `in_progress` at the approved design stage.
+  - Next step is user review of the written Spec, followed by a TDD implementation plan.
+- Known risk/blocker:
+  - The new branch is stacked on the combined `codex/stock-002-sqlite-storage` branch and therefore depends on the storage/Reports changes already present there.
+  - On this Windows machine, use `init.ps1`; the WSL `/bin/bash` path remains unavailable.
+
+### Session 025
+
+- Date: 2026-06-18
+- Goal: Turn the approved `stock-004` Watchlist Spec into an executable TDD implementation plan.
+- Completed:
+  - Received final user approval for `docs/superpowers/specs/2026-06-18-stock-004-watchlist-design.md`.
+  - Clarified patch semantics in the Spec: omitted update fields preserve current values; explicit blank/null group moves to the canonical `Default` ungrouped bucket; `note: null` clears the note.
+  - Created `docs/superpowers/plans/2026-06-18-stock-004-watchlist.md`.
+  - Split implementation into seven tasks: storage update, RPC/API wiring, renderer helpers, route/navigation, dialogs, page/sidebar/i18n wiring, and final verification/records.
+  - Self-reviewed the plan for Spec coverage, TDD ordering, type/signature consistency, path correctness, and scope.
+- Current progress:
+  - `stock-004` remains `in_progress`.
+  - The implementation plan is ready for execution.
+- Known risk/blocker:
+  - The branch remains stacked on `codex/stock-002-sqlite-storage`.
+  - On this Windows machine, use `init.ps1`; the WSL `/bin/bash` path remains unavailable.
+
+### Session 026
+
+- Date: 2026-06-20
+- Goal: Complete `stock-004`, the lightweight Watchlist, including implementation review, final verification, and persistent records.
+- Completed:
+  - Implemented atomic watchlist item updates with duplicate symbol/group conflict protection and wired `stockResearch:updateWatchlistItem` through shared protocol, server-core, ElectronAPI, and channel mapping.
+  - Added tested renderer helpers for grouping, filtering, deterministic selection, dirty state, research launch, domain error classification, and stale request generations.
+  - Added the top-level `watchlist` route, navigation history support, keyboard/sidebar entry, and standalone two-pane `WatchlistPage`.
+  - Added workspace-safe loading and A→B→A stale-result guards for list, save, research, session refresh, and navigation operations.
+  - Added add/remove dialogs with submission-close guards, localized conflict/not-found behavior, app-language date formatting, pluralized counts, and complete translations across all locale files.
+  - Completed spec review and code-quality review fixes; Task 6 implementation commit is `b4d3ea4 Add stock watchlist page`.
+  - Marked `stock-004` as `passing`; all features currently listed in `feature_list.json` are now passing.
+- Verification:
+  - Non-registration focused suite passed: 70 tests, 0 failures, 487 expectations.
+  - Registration coverage passed in an isolated process: `registration.test.ts` + `registration-profiles.test.ts`, 4 tests, 0 failures. When included in the large parallel Bun invocation, the profile test shared mock registration state across files and produced a timeout/cross-profile false negative; isolation consistently passed and the Watchlist page commit does not modify registration code.
+  - `bun run typecheck:shared`: passed.
+  - `cd packages/server-core; bun run typecheck`: passed.
+  - `cd apps/electron; bun run typecheck`: passed.
+  - `powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1`: passed.
+  - `bun run lint:i18n:sorted`: passed.
+  - `bun run lint:i18n:parity`: passed with 6 locales and 1484 keys each.
+  - `python -m json.tool feature_list.json`: passed after final record edits.
+  - `git diff --check`: passed after final record edits.
+- Browser smoke note:
+  - The Vite renderer server returned HTTP 200 at `http://127.0.0.1:56072/`.
+  - A normal browser tab cannot provide the Electron preload/API, so the Electron renderer remained at its initial shell and could not serve as an end-to-end product test. No visual-pass claim is made; the repository's approved page-wiring strategy uses focused tests, Electron typecheck, and the standard startup entry rather than adding a new DOM harness.
+- Current progress:
+  - `stock-004` is `passing` on branch `codex/stock-004-watchlist`.
+  - The branch is 17 commits ahead of cached `origin/codex/stock-002-sqlite-storage` and has not been pushed in this session.
+  - No additional not-started feature remains in `feature_list.json`; the next action is branch handoff (push/merge/PR choice) or defining the next product feature.
+- Known risk/blocker:
+  - The branch remains stacked on the combined `codex/stock-002-sqlite-storage` history.
+  - On this Windows machine, use `init.ps1`; the WSL `/bin/bash` path remains unavailable.
+
+### Session 027
+
+- Date: 2026-06-20
+- Goal: Locally merge the completed Watchlist branch into `codex/stock-002-sqlite-storage`.
+- Completed:
+  - Confirmed `codex/stock-002-sqlite-storage` is an ancestor of `codex/stock-004-watchlist` and both worktrees were clean before integration.
+  - Switched to `codex/stock-002-sqlite-storage` and fast-forward merged `codex/stock-004-watchlist` from `d286ca8` to `ccd443f` with no conflicts.
+  - Kept the feature branch intact; no push or branch deletion was requested.
+  - Investigated the post-checkout locale sorted-check failure: all locale blob hashes matched the index and the apparent drift was caused by Windows CRLF checkout versus the formatter's LF output. Running the standard sorter produced no staged content diff and restored a clean index.
+- Verification on the merged target branch:
+  - Core focused suite: 70 tests, 0 failures, 487 expectations.
+  - Registration suite in isolated process: 4 tests, 0 failures, 8 expectations.
+  - `bun run typecheck:shared`: passed.
+  - `cd packages/server-core; bun run typecheck`: passed.
+  - `cd apps/electron; bun run typecheck`: passed.
+  - `powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1`: passed.
+  - `bun run lint:i18n:sorted`: passed after normalizing working-tree line endings with `bun run sort-locales`; Git confirmed no actual locale content diff.
+  - `bun run lint:i18n:parity`: passed with 6 locales and 1484 keys each.
+  - `python -m json.tool feature_list.json` and `git diff --check`: passed after this record update.
+- Current progress:
+  - Current branch: `codex/stock-002-sqlite-storage`.
+  - `stock-001` through `stock-004` are locally integrated and marked passing.
+  - The combined target branch has not been pushed in this session.
+- Known risk/blocker:
+  - The local target branch is ahead of `origin/codex/stock-002-sqlite-storage`; the user will push manually if desired.
+  - On this Windows machine, use `init.ps1`; the WSL `/bin/bash` path remains unavailable.
+
+### Session 028
+
+- Date: 2026-06-21
+- Goal: Resume from persistent state and verify the completed combined branch before handoff.
+- Completed:
+  - Restored context from `claude-progress.md`, `feature_list.json`, `session-handoff.md`, recent commits, and the Watchlist implementation plan.
+  - Confirmed the normal repository workspace is clean on `codex/stock-002-sqlite-storage`.
+  - Confirmed local `HEAD`, the cached tracking ref, and the live remote branch `origin/codex/stock-002-sqlite-storage` all point to `f5c90cd`.
+  - Confirmed every feature in `feature_list.json` is marked `passing`; no unstarted feature remains, so no new implementation was opened without a product decision.
+  - Reproduced the documented Bun cross-file mock-state failure when the two registration test files run in one invocation, then confirmed each file passes in its own process.
+- Verification:
+  - `powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1`: passed.
+  - Core focused suite: 64 tests, 0 failures, 477 expectations.
+  - `registration.test.ts` in its own process: 2 tests, 0 failures.
+  - `registration-profiles.test.ts` in its own process: 2 tests, 0 failures.
+  - `bun run typecheck:shared`: passed.
+  - `cd packages/server-core; bun run typecheck`: passed.
+  - `cd apps/electron; bun run typecheck`: passed.
+  - `bun run lint:i18n:sorted`: passed.
+  - `bun run lint:i18n:parity`: passed with 6 locales and 1484 keys each.
+  - `python -m json.tool feature_list.json`: passed after record edits.
+  - `git diff --check`: passed after record edits with only expected Windows line-ending warnings.
+- Current progress:
+  - Current branch: `codex/stock-002-sqlite-storage`.
+  - `stock-001` through `stock-004` are integrated, verified, and present on the remote branch at `f5c90cd`.
+  - The next action requires a product/integration choice: merge toward `main`, open/update a PR, keep the branch, or define the next feature.
+- Known risk/blocker:
+  - Running `registration.test.ts` and `registration-profiles.test.ts` together in one Bun invocation still shares mock registration state and yields a timeout/cross-profile false negative; each file passes independently.
+  - On this Windows machine, use `init.ps1`; the WSL `/bin/bash` path remains unavailable.

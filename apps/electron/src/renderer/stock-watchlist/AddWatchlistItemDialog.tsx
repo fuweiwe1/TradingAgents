@@ -1,0 +1,226 @@
+import * as React from 'react'
+import { useTranslation } from 'react-i18next'
+
+import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { useRegisterModal } from '@/context/ModalContext'
+import type { StockWatchlistItem } from '../../shared/types'
+
+interface AddWatchlistItemDialogProps {
+  open: boolean
+  workspaceId: string
+  groupOptions: string[]
+  onOpenChange: (open: boolean) => void
+  onAdded: (item: StockWatchlistItem) => void
+}
+
+export function AddWatchlistItemDialog({
+  open,
+  workspaceId,
+  groupOptions,
+  onOpenChange,
+  onAdded,
+}: AddWatchlistItemDialogProps) {
+  const { t } = useTranslation()
+  const symbolInputRef = React.useRef<HTMLInputElement>(null)
+  const mountedRef = React.useRef(true)
+  const requestContextRef = React.useRef({ open, workspaceId, version: 0 })
+  const symbolId = React.useId()
+  const groupId = React.useId()
+  const groupOptionsId = React.useId()
+  const noteId = React.useId()
+  const [symbol, setSymbol] = React.useState('')
+  const [groupName, setGroupName] = React.useState('')
+  const [note, setNote] = React.useState('')
+  const [submitting, setSubmitting] = React.useState(false)
+  const submittingRef = React.useRef(submitting)
+  const [error, setError] = React.useState<string | null>(null)
+
+  React.useLayoutEffect(() => {
+    submittingRef.current = submitting
+  }, [submitting])
+
+  const handleOpenChange = React.useCallback((nextOpen: boolean) => {
+    if (submittingRef.current && !nextOpen) return
+    onOpenChange(nextOpen)
+  }, [onOpenChange])
+  const handleRegisteredClose = React.useCallback(() => {
+    handleOpenChange(false)
+  }, [handleOpenChange])
+
+  useRegisterModal(open, handleRegisteredClose)
+
+  React.useLayoutEffect(() => {
+    const requestContext = requestContextRef.current
+    if (requestContext.open !== open || requestContext.workspaceId !== workspaceId) {
+      requestContextRef.current = {
+        open,
+        workspaceId,
+        version: requestContext.version + 1,
+      }
+    }
+  }, [open, workspaceId])
+
+  React.useLayoutEffect(() => {
+    mountedRef.current = true
+    return () => {
+      mountedRef.current = false
+    }
+  }, [])
+
+  React.useEffect(() => {
+    setSubmitting(false)
+    setError(null)
+
+    if (!open) {
+      setSymbol('')
+      setGroupName('')
+      setNote('')
+      return
+    }
+
+    const timeoutId = window.setTimeout(() => symbolInputRef.current?.focus(), 0)
+    return () => window.clearTimeout(timeoutId)
+  }, [open, workspaceId])
+
+  const handleSubmit = React.useCallback(async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (submitting || !symbol.trim()) return
+
+    const requestVersion = requestContextRef.current.version
+    const isCurrentRequest = () => (
+      mountedRef.current
+      && requestContextRef.current.version === requestVersion
+      && requestContextRef.current.open
+    )
+    setSubmitting(true)
+    setError(null)
+
+    let item: StockWatchlistItem
+    try {
+      item = await window.electronAPI.addStockWatchlistItem(workspaceId, {
+        symbol: symbol.trim(),
+        groupName: groupName.trim() || null,
+        note: note.trim() || null,
+      })
+    } catch (submitError) {
+      if (isCurrentRequest()) {
+        setError(
+          submitError instanceof Error
+            ? submitError.message
+            : t('watchlist.addError'),
+        )
+        setSubmitting(false)
+      }
+      return
+    }
+
+    if (!isCurrentRequest()) return
+
+    setSubmitting(false)
+    try {
+      onAdded(item)
+    } finally {
+      onOpenChange(false)
+    }
+  }, [groupName, note, onAdded, onOpenChange, submitting, symbol, t, workspaceId])
+
+  return (
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent className="sm:max-w-[440px]" showCloseButton={!submitting}>
+        <form className="grid gap-4" onSubmit={handleSubmit}>
+          <DialogHeader>
+            <DialogTitle>{t('watchlist.addTitle')}</DialogTitle>
+            <DialogDescription>
+              {t('watchlist.addDescription')}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-2">
+            <label htmlFor={symbolId} className="text-sm font-medium">
+              {t('watchlist.symbol')}
+            </label>
+            <Input
+              ref={symbolInputRef}
+              id={symbolId}
+              value={symbol}
+              onChange={(event) => {
+                setSymbol(event.target.value)
+                if (error) setError(null)
+              }}
+              placeholder="600519 / 00700.HK / AAPL"
+              disabled={submitting}
+            />
+          </div>
+
+          <div className="grid gap-2">
+            <label htmlFor={groupId} className="text-sm font-medium">
+              {t('watchlist.group')}
+            </label>
+            <Input
+              id={groupId}
+              list={groupOptionsId}
+              value={groupName}
+              onChange={(event) => {
+                setGroupName(event.target.value)
+                if (error) setError(null)
+              }}
+              placeholder={t('watchlist.groupPlaceholder')}
+              disabled={submitting}
+            />
+            <datalist id={groupOptionsId}>
+              {groupOptions.map((group) => (
+                <option key={group} value={group} />
+              ))}
+            </datalist>
+          </div>
+
+          <div className="grid gap-2">
+            <label htmlFor={noteId} className="text-sm font-medium">
+              {t('watchlist.note')}
+            </label>
+            <Textarea
+              id={noteId}
+              value={note}
+              onChange={(event) => {
+                setNote(event.target.value)
+                if (error) setError(null)
+              }}
+              placeholder={t('watchlist.notePlaceholder')}
+              disabled={submitting}
+            />
+          </div>
+
+          {error && (
+            <p className="text-sm text-destructive" role="alert">
+              {error}
+            </p>
+          )}
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => handleOpenChange(false)}
+              disabled={submitting}
+            >
+              {t('watchlist.cancel')}
+            </Button>
+            <Button type="submit" disabled={submitting || !symbol.trim()}>
+              {submitting ? t('watchlist.adding') : t('watchlist.add')}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
+}

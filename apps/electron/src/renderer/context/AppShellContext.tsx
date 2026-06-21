@@ -45,6 +45,11 @@ export interface AppShellContextType {
   workspaceDefaultLlmConnection?: string
   /** Refresh LLM connections from config */
   refreshLlmConnections: () => Promise<void>
+  /** Refresh a newly created stock research session before navigation */
+  refreshStockResearchSession?: (
+    sessionId: string,
+    isCurrent?: () => boolean,
+  ) => Promise<void>
   pendingPermissions: Map<string, PermissionRequest[]>
   pendingCredentials: Map<string, CredentialRequest[]>
   /** Get draft input text for a session - reads from ref without triggering re-renders */
@@ -57,7 +62,7 @@ export interface AppShellContextType {
   enabledSources?: LoadedSource[]
   /** All skills for this workspace - provided by AppShell component (for @mentions) */
   skills?: LoadedSkill[]
-  /** Working directory of the active session â€” needed for project-level skill resolution */
+  /** Working directory of the active session â€?needed for project-level skill resolution */
   activeSessionWorkingDirectory?: string
   /** All label configs (tree) for label menu and badge display */
   labels?: import('@craft-agent/shared/labels').LabelConfig[]
@@ -123,7 +128,7 @@ export interface AppShellContextType {
   // Input draft callback
   onInputChange: (sessionId: string, value: string) => void
 
-  // Attachment draft callback â€” persists attachment refs per session
+  // Attachment draft callback â€?persists attachment refs per session
   onAttachmentsChange: (sessionId: string, attachments: FileAttachment[]) => void
 
   // Source selection callback (per-session) - provided by AppShell component
@@ -157,15 +162,15 @@ export interface AppShellContextType {
   onChatMatchInfoChange?: (info: { sessionId: string | null; count: number; index: number; isHighlighting: boolean }) => void
 
   // Automation management
-  /** Test an automation by ID â€” executes its actions and returns results */
+  /** Test an automation by ID â€?executes its actions and returns results */
   onTestAutomation?: (automationId: string) => void
   /** Toggle an automation's enabled state by ID */
   onToggleAutomation?: (automationId: string) => void
-  /** Duplicate an automation by ID â€” clones config with " Copy" suffix */
+  /** Duplicate an automation by ID â€?clones config with " Copy" suffix */
   onDuplicateAutomation?: (automationId: string) => void
-  /** Delete an automation by ID â€” removes from automations config */
+  /** Delete an automation by ID â€?removes from automations config */
   onDeleteAutomation?: (automationId: string) => void
-  /** Map of automationId â†’ last test result */
+  /** Map of automationId â†?last test result */
   automationTestResults?: Record<string, import('../components/automations/types').TestResult>
   /** Fetch execution history for an automation by ID */
   getAutomationHistory?: (automationId: string) => Promise<import('../components/automations/types').ExecutionEntry[]>

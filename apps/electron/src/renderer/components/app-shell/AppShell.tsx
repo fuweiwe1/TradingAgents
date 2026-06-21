@@ -33,6 +33,8 @@ import {
   Info,
   MailOpen,
   LineChart,
+  FileText,
+  Star,
 } from "lucide-react"
 // SessionStatusIcons no longer used - icons come from dynamic sessionStatuses
 import { SourceAvatar } from "@/components/ui/source-avatar"
@@ -114,6 +116,8 @@ import {
   isSettingsNavigation,
   isSkillsNavigation,
   isAutomationsNavigation,
+  isWatchlistNavigation,
+  isReportsNavigation,
   type NavigationState,
 } from "@/contexts/NavigationContext"
 import type { SettingsSubpage } from "../../../shared/types"
@@ -614,9 +618,12 @@ function AppShellContent({
     navigateToSession(sessionId)
   }, [store, setFocusedPanel, navigateToSession])
 
-  const refreshStockResearchSession = useCallback(async (sessionId: string) => {
+  const refreshStockResearchSession = useCallback(async (
+    sessionId: string,
+    isCurrent: () => boolean = () => true,
+  ) => {
     const loadedSession = await window.electronAPI.getSessionMessages(sessionId)
-    if (loadedSession) {
+    if (loadedSession && isCurrent()) {
       store.set(replaceLoadedSessionAtom, loadedSession)
     }
   }, [store])
@@ -1606,7 +1613,8 @@ function AppShellContent({
     automationTestResults,
     getAutomationHistory,
     onReplayAutomation: handleReplayAutomation,
-  }), [contextValue, handleDeleteSession, sources, skills, activeSessionWorkingDirectory, displayLabelConfigs, handleSessionLabelsChange, enabledModes, effectiveSessionStatuses, handleSessionSourcesChange, isAutoCompact, searchActive, searchQuery, handleChatMatchInfoChange, handleTestAutomation, handleToggleAutomation, handleDuplicateAutomation, handleDeleteAutomation, automationTestResults, getAutomationHistory, handleReplayAutomation])
+    refreshStockResearchSession,
+  }), [contextValue, handleDeleteSession, sources, skills, activeSessionWorkingDirectory, displayLabelConfigs, handleSessionLabelsChange, enabledModes, effectiveSessionStatuses, handleSessionSourcesChange, isAutoCompact, searchActive, searchQuery, handleChatMatchInfoChange, handleTestAutomation, handleToggleAutomation, handleDuplicateAutomation, handleDeleteAutomation, automationTestResults, getAutomationHistory, handleReplayAutomation, refreshStockResearchSession])
 
   // Persist expanded folders to localStorage (workspace-scoped)
   React.useEffect(() => {
@@ -1702,6 +1710,16 @@ function AppShellContent({
 
   const handleSourcesLocalClick = useCallback(() => {
     navigate(routes.view.sourcesLocal())
+  }, [])
+
+  // Handler for watchlist view
+  const handleWatchlistClick = useCallback(() => {
+    navigate(routes.view.watchlist())
+  }, [])
+
+  // Handler for reports view
+  const handleReportsClick = useCallback(() => {
+    navigate(routes.view.reports())
   }, [])
 
   // Handler for skills view
@@ -1967,7 +1985,9 @@ function AppShellContent({
     }
     flattenTree(labelTree)
 
-    // 3. Sources, Skills, Settings
+    // 3. Watchlist, Reports, Sources, Skills, Settings
+    result.push({ id: 'nav:watchlist', type: 'nav', action: handleWatchlistClick })
+    result.push({ id: 'nav:reports', type: 'nav', action: handleReportsClick })
     result.push({ id: 'nav:sources', type: 'nav', action: handleSourcesClick })
     result.push({ id: 'nav:skills', type: 'nav', action: handleSkillsClick })
     result.push({ id: 'nav:automations', type: 'nav', action: handleAutomationsClick })
@@ -1975,7 +1995,7 @@ function AppShellContent({
     result.push({ id: 'nav:whats-new', type: 'nav', action: handleWhatsNewClick })
 
     return result
-  }, [handleAllSessionsClick, handleFlaggedClick, handleArchivedClick, handleSessionStatusClick, effectiveSessionStatuses, handleLabelClick, labelConfigs, labelTree, viewConfigs, handleViewClick, handleSourcesClick, handleSkillsClick, handleAutomationsClick, handleSettingsClick, handleWhatsNewClick])
+  }, [handleAllSessionsClick, handleFlaggedClick, handleArchivedClick, handleSessionStatusClick, effectiveSessionStatuses, handleLabelClick, labelConfigs, labelTree, viewConfigs, handleViewClick, handleWatchlistClick, handleReportsClick, handleSourcesClick, handleSkillsClick, handleAutomationsClick, handleSettingsClick, handleWhatsNewClick])
 
   // Toggle folder expanded state
   const handleToggleFolder = React.useCallback((path: string) => {
@@ -2084,6 +2104,16 @@ function AppShellContent({
 
   // Get title based on navigation state
   const listTitle = React.useMemo(() => {
+    // Watchlist navigator
+    if (isWatchlistNavigation(navState)) {
+      return t("sidebar.watchlist")
+    }
+
+    // Reports navigator
+    if (isReportsNavigation(navState)) {
+      return t("sidebar.reports")
+    }
+
     // Sources navigator
     if (isSourcesNavigation(navState)) {
       return t("sidebar.sources")
@@ -2377,7 +2407,21 @@ function AppShellContent({
                     },
                     // --- Separator ---
                     { id: "separator:chats-sources", type: "separator" },
-                    // --- Sources & Skills Section ---
+                    // --- Watchlist, Reports, Sources & Skills Section ---
+                    {
+                      id: "nav:watchlist",
+                      title: t("sidebar.watchlist"),
+                      icon: Star,
+                      variant: isWatchlistNavigation(navState) ? "default" : "ghost",
+                      onClick: handleWatchlistClick,
+                    },
+                    {
+                      id: "nav:reports",
+                      title: t("sidebar.reports"),
+                      icon: FileText,
+                      variant: isReportsNavigation(navState) ? "default" : "ghost",
+                      onClick: handleReportsClick,
+                    },
                     {
                       id: "nav:sources",
                       title: t("sidebar.sources"),

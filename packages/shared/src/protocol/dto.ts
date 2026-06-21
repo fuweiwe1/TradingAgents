@@ -23,8 +23,14 @@ import type {
   CredentialAuthRequest as SharedCredentialAuthRequest,
 } from '../agent/index'
 export type {
+  AddStockWatchlistItemRequest,
   CreateStockResearchRunRequest,
   CreateStockResearchRunResult,
+  RemoveStockWatchlistItemResult,
+  SaveStockResearchReportRequest,
+  StockResearchReport,
+  StockWatchlistItem,
+  UpdateStockWatchlistItemRequest,
 } from '../stock'
 
 // Re-export generateMessageId for handler convenience
