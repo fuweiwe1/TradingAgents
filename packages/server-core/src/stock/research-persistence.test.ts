@@ -213,13 +213,16 @@ describe('StockResearchPersistenceCoordinator', () => {
     expect(calls.map(call => call.method)).not.toContain('sendMessage')
   })
 
-  test('retry restores failure state when sending the repair prompt fails', async () => {
+  test('retry restores failure state when background repair sending fails', async () => {
     const { coordinator, calls } = createHarness({
       content: 'Incomplete response',
       sendError: new Error('send failed'),
     })
 
-    await expect(coordinator.retry('session-1')).rejects.toThrow('send failed')
+    await expect(coordinator.retry('session-1')).resolves.toEqual({
+      status: 'regenerating',
+    })
+    await Bun.sleep(0)
     expect(calls).toContainEqual({
       method: 'markResearchPersistenceFailed',
       args: ['run-1', '重新生成报告失败：send failed'],

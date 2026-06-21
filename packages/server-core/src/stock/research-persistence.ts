@@ -108,19 +108,19 @@ export class StockResearchPersistenceCoordinator {
     }
 
     this.options.storage.markResearchRunRunning(run.id)
-    try {
-      await this.options.sessionManager.sendMessage(
-        sessionId,
-        buildStockResearchRepairPrompt(run.symbol),
-      )
-    } catch (error) {
+    void this.options.sessionManager.sendMessage(
+      sessionId,
+      buildStockResearchRepairPrompt(run.symbol),
+    ).catch(error => {
       const message = error instanceof Error ? error.message : String(error)
       this.options.storage.markResearchPersistenceFailed(
         run.id,
         `重新生成报告失败：${message}`,
       )
-      throw error
-    }
+      this.options.logger.error(
+        `[stock-persistence] Failed to regenerate report for run ${run.id}: ${message}`,
+      )
+    })
 
     return { status: 'regenerating' }
   }

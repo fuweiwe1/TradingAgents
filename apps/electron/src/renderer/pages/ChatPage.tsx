@@ -27,7 +27,13 @@ import { deriveSessionMessagesLoadState, formatSessionLoadFailure } from '@/lib/
 import { ensureSessionMessagesLoadedAtom, forceSessionMessagesReloadAtom, loadedSessionsAtom, sessionMetaMapAtom } from '@/atoms/sessions'
 import { getSessionTitle } from '@/utils/session'
 import { StockResearchStepPanel } from '@/stock-research/StockResearchStepPanel'
+import { StockResearchPersistenceBanner } from '@/stock-research/StockResearchPersistenceBanner'
+import {
+  createStockResearchPersistenceRequestGuard,
+  toPersistenceBannerState,
+} from '@/stock-research/persistence-state'
 import { deriveStockResearchStepStatuses, isStockResearchSession } from '@/stock-research/step-status'
+import type { StockResearchRunRecord } from '@craft-agent/shared/protocol'
 // Model resolution: connection.defaultModel (no hardcoded defaults)
 import { resolveEffectiveConnectionSlug, isSessionConnectionUnavailable } from '@config/llm-connections'
 
@@ -418,10 +424,109 @@ const ChatPage = React.memo(function ChatPage({ sessionId }: ChatPageProps) {
     : false
   // Use isAsyncOperationOngoing for shimmer effect (sharing, updating share, revoking, title regeneration)
   const isAsyncOperationOngoing = session?.isAsyncOperationOngoing || sessionMeta?.isAsyncOperationOngoing || false
+  const isStockResearch = isStockResearchSession(session)
   const stockResearchSteps = React.useMemo(() => {
-    if (!session || !isStockResearchSession(session)) return null
+    if (!session || !isStockResearch) return null
     return deriveStockResearchStepStatuses(session.messages ?? [])
-  }, [session])
+  }, [isStockResearch, session])
+  const persistenceGuardRef = React.useRef(
+    createStockResearchPersistenceRequestGuard(
+      activeWorkspaceId ?? '',
+      sessionId,
+    ),
+  )
+  const [stockResearchRun, setStockResearchRun] =
+    React.useState<StockResearchRunRecord | null>(null)
+  const [persistenceRetrying, setPersistenceRetrying] = React.useState(false)
+  const [persistenceRegenerating, setPersistenceRegenerating] =
+    React.useState(false)
+  const persistenceBannerState = React.useMemo(
+    () => toPersistenceBannerState(
+      stockResearchRun,
+      persistenceRegenerating,
+    ),
+    [stockResearchRun, persistenceRegenerating],
+  )
+
+  const loadStockResearchRun = React.useCallback(async () => {
+    if (
+      !activeWorkspaceId
+      || !isStockResearch
+    ) {
+      setStockResearchRun(null)
+      return
+    }
+
+    const token = persistenceGuardRef.current.begin('load')
+    try {
+      const run = await window.electronAPI.getStockResearchRunBySession(
+        activeWorkspaceId,
+        sessionId,
+      )
+      if (!persistenceGuardRef.current.isCurrent(token)) return
+      setStockResearchRun(run)
+      if (run?.status !== 'running') {
+        setPersistenceRegenerating(false)
+      }
+    } catch (error) {
+      if (!persistenceGuardRef.current.isCurrent(token)) return
+      console.error('[ChatPage] Failed to load stock research run:', error)
+      setStockResearchRun(null)
+    }
+  }, [activeWorkspaceId, isStockResearch, sessionId])
+
+  React.useEffect(() => {
+    const changed = persistenceGuardRef.current.syncContext(
+      activeWorkspaceId ?? '',
+      sessionId,
+    )
+    if (changed) {
+      setStockResearchRun(null)
+      setPersistenceRetrying(false)
+      setPersistenceRegenerating(false)
+    }
+    void loadStockResearchRun()
+  }, [
+    activeWorkspaceId,
+    loadStockResearchRun,
+    sessionId,
+    session?.isProcessing,
+    session?.lastFinalMessageId,
+  ])
+
+  const handleRetryStockResearchPersistence = React.useCallback(async () => {
+    if (!activeWorkspaceId) return
+    const token = persistenceGuardRef.current.begin('retry')
+    setPersistenceRetrying(true)
+    try {
+      const result = await window.electronAPI.retryStockResearchPersistence(
+        activeWorkspaceId,
+        sessionId,
+      )
+      if (!persistenceGuardRef.current.isCurrent(token)) return
+      setPersistenceRegenerating(result.status === 'regenerating')
+      if (result.status === 'completed') {
+        await loadStockResearchRun()
+      } else {
+        setStockResearchRun(current => current
+          ? { ...current, status: 'running', errorMessage: null }
+          : current
+        )
+      }
+    } catch (error) {
+      if (!persistenceGuardRef.current.isCurrent(token)) return
+      toast.error(t('stockResearch.persistence.failed'), {
+        description: error instanceof Error
+          ? error.message
+          : String(error),
+      })
+      await loadStockResearchRun()
+    } finally {
+      if (persistenceGuardRef.current.isCurrent(token)) {
+        setPersistenceRetrying(false)
+      }
+    }
+  }, [activeWorkspaceId, loadStockResearchRun, sessionId, t])
 
   // Rename dialog state
   const [renameDialogOpen, setRenameDialogOpen] = React.useState(false)
@@ -780,6 +885,13 @@ const ChatPage = React.memo(function ChatPage({ sessionId }: ChatPageProps) {
         <div className="flex-1 flex flex-col min-h-0">
           {stockResearchSteps && (
             <StockResearchStepPanel steps={stockResearchSteps} />
+          )}
+          {stockResearchSteps && (
+            <StockResearchPersistenceBanner
+              state={persistenceBannerState}
+              isRetrying={persistenceRetrying}
+              onRetry={handleRetryStockResearchPersistence}
+            />
           )}
           <ChatDisplay
             ref={chatDisplayRef}
