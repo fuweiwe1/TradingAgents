@@ -845,3 +845,27 @@
 - Known risk/blocker:
   - Electron logs Node's experimental SQLite warning under Node 22.21.1; functionality is available and verified, but the API remains marked experimental by that runtime.
   - On this Windows machine, use `init.ps1`; the WSL `/bin/bash` path remains unavailable.
+
+### Session 034
+
+- Date: 2026-06-21
+- Goal: Design complete runtime isolation between the installed Craft Agents app and StockCraft Dev.
+- Completed:
+  - Created branch `codex/infra-002-instance-isolation`.
+  - Added `infra-002` as the only `in_progress` feature.
+  - Audited instance boundaries and confirmed `CRAFT_CONFIG_DIR` currently covers only part of the application.
+  - Identified production hard-coded paths affecting credentials, workspaces, docs, release notes, StockCraft SQLite, window state, messaging, audit logs, network interception, and headless server paths.
+  - Confirmed Electron does not currently set a separate `userData` path before main-process modules load.
+  - Created `docs/superpowers/specs/2026-06-21-infra-002-instance-isolation-design.md`.
+- Design decision:
+  - Installed original remains unchanged at `~/.craft-agent`.
+  - Local development defaults to `StockCraft Dev`, `~/.stockcraft-dev`, a separate Electron userData directory, and `stockcraft-dev://`.
+  - No automatic migration or credential sharing.
+- Current progress:
+  - Spec is ready for user review.
+  - No production implementation has started.
+- Next best action:
+  - After user approval, create the TDD implementation plan for `infra-002`.
+- Known risk/blocker:
+  - Several modules capture paths at import time, so implementation needs an Electron bootstrap entry that sets the instance identity before dynamically importing the existing main process.
+  - On this Windows machine, use `init.ps1`; the WSL `/bin/bash` path remains unavailable.
