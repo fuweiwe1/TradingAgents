@@ -438,6 +438,8 @@ export const RPC_CHANNELS = {
     SAVE_REPORT: 'stockResearch:saveReport',
     LIST_REPORTS: 'stockResearch:listReports',
     GET_REPORT: 'stockResearch:getReport',
+    GET_RUN_BY_SESSION: 'stockResearch:getRunBySession',
+    RETRY_PERSISTENCE: 'stockResearch:retryPersistence',
   },
 } as const
 

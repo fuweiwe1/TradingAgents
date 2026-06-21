@@ -27,8 +27,10 @@ export type {
   CreateStockResearchRunRequest,
   CreateStockResearchRunResult,
   RemoveStockWatchlistItemResult,
+  RetryStockResearchPersistenceResult,
   SaveStockResearchReportRequest,
   StockResearchReport,
+  StockResearchRunRecord,
   StockWatchlistItem,
   UpdateStockWatchlistItemRequest,
 } from '../stock'

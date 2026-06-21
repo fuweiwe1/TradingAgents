@@ -31,6 +31,8 @@ export const CHANNEL_MAP = {
   saveStockResearchReport: invoke(RPC_CHANNELS.stockResearch.SAVE_REPORT),
   listStockResearchReports: invoke(RPC_CHANNELS.stockResearch.LIST_REPORTS),
   getStockResearchReport: invoke(RPC_CHANNELS.stockResearch.GET_REPORT),
+  getStockResearchRunBySession: invoke(RPC_CHANNELS.stockResearch.GET_RUN_BY_SESSION),
+  retryStockResearchPersistence: invoke(RPC_CHANNELS.stockResearch.RETRY_PERSISTENCE),
   deleteSession: invoke(RPC_CHANNELS.sessions.DELETE),
   sendMessage: invoke(RPC_CHANNELS.sessions.SEND_MESSAGE),
   cancelProcessing: invoke(RPC_CHANNELS.sessions.CANCEL),

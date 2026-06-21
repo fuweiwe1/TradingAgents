@@ -4,8 +4,10 @@ import type {
   CreateStockResearchRunRequest,
   CreateStockResearchRunResult,
   RemoveStockWatchlistItemResult,
+  RetryStockResearchPersistenceResult,
   SaveStockResearchReportRequest,
   StockResearchReport,
+  StockResearchRunRecord,
   StockWatchlistItem,
   UpdateStockWatchlistItemRequest,
 } from '@craft-agent/shared/protocol'
@@ -27,6 +29,8 @@ export const HANDLED_CHANNELS = [
   RPC_CHANNELS.stockResearch.SAVE_REPORT,
   RPC_CHANNELS.stockResearch.LIST_REPORTS,
   RPC_CHANNELS.stockResearch.GET_REPORT,
+  RPC_CHANNELS.stockResearch.GET_RUN_BY_SESSION,
+  RPC_CHANNELS.stockResearch.RETRY_PERSISTENCE,
 ] as const
 
 export function registerStockResearchHandlers(server: RpcServer, deps: HandlerDeps): void {
@@ -41,15 +45,25 @@ export function registerStockResearchHandlers(server: RpcServer, deps: HandlerDe
       const session = await deps.sessionManager.createSession(workspaceId, {
         name: buildResearchSessionName(symbol),
       })
-
-      await deps.sessionManager.sendMessage(
-        session.id,
-        buildStockResearchPrompt(symbol),
-      )
-      const run = requireStockStorage(deps).createResearchRun({
+      const storage = requireStockStorage(deps)
+      const run = storage.createResearchRun({
         sessionId: session.id,
         symbol,
       })
+      storage.markResearchRunRunning(run.id)
+      try {
+        await deps.sessionManager.sendMessage(
+          session.id,
+          buildStockResearchPrompt(symbol),
+        )
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error)
+        storage.markResearchPersistenceFailed(
+          run.id,
+          `启动研究失败：${message}`,
+        )
+        throw error
+      }
 
       return {
         runId: run.id,
@@ -133,6 +147,28 @@ export function registerStockResearchHandlers(server: RpcServer, deps: HandlerDe
       return requireStockStorage(deps).getResearchReport(id)
     },
   )
+
+  server.handle(
+    RPC_CHANNELS.stockResearch.GET_RUN_BY_SESSION,
+    async (
+      _ctx,
+      _workspaceId: string,
+      sessionId: string,
+    ): Promise<StockResearchRunRecord | null> => {
+      return requireStockStorage(deps).getResearchRunBySessionId(sessionId)
+    },
+  )
+
+  server.handle(
+    RPC_CHANNELS.stockResearch.RETRY_PERSISTENCE,
+    async (
+      _ctx,
+      _workspaceId: string,
+      sessionId: string,
+    ): Promise<RetryStockResearchPersistenceResult> => {
+      return requireStockResearchPersistence(deps).retry(sessionId)
+    },
+  )
 }
 
 function requireStockStorage(deps: HandlerDeps) {
@@ -140,4 +176,11 @@ function requireStockStorage(deps: HandlerDeps) {
     throw new Error('Stock storage is not configured')
   }
   return deps.stockStorage
+}
+
+function requireStockResearchPersistence(deps: HandlerDeps) {
+  if (!deps.stockResearchPersistence) {
+    throw new Error('Stock research persistence is not configured')
+  }
+  return deps.stockResearchPersistence
 }

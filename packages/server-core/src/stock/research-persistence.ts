@@ -1,6 +1,7 @@
 import {
   buildStockResearchRepairPrompt,
   parseStockResearchReport,
+  type RetryStockResearchPersistenceResult,
 } from '@craft-agent/shared/stock'
 import type { Session } from '@craft-agent/shared/protocol'
 import type { Logger } from '../runtime/platform'
@@ -19,10 +20,6 @@ export interface StockResearchPersistenceCoordinatorOptions {
   storage: StockStorage
   sessionManager: PersistenceSessionManager
   logger: Logger
-}
-
-export type RetryStockResearchPersistenceResult = {
-  status: 'completed' | 'regenerating' | 'running'
 }
 
 export class StockResearchPersistenceCoordinator {

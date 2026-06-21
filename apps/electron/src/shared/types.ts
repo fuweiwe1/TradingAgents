@@ -215,8 +215,10 @@ import type {
   RemoteSessionTransferPayload,
   ImportRemoteSessionTransferResult,
   RemoveStockWatchlistItemResult,
+  RetryStockResearchPersistenceResult,
   SaveStockResearchReportRequest,
   StockResearchReport,
+  StockResearchRunRecord,
   StockWatchlistItem,
   UpdateStockWatchlistItemRequest,
 } from '@craft-agent/shared/protocol'
@@ -236,6 +238,8 @@ export interface ElectronAPI {
   saveStockResearchReport(workspaceId: string, request: SaveStockResearchReportRequest): Promise<StockResearchReport>
   listStockResearchReports(workspaceId: string): Promise<StockResearchReport[]>
   getStockResearchReport(workspaceId: string, id: string): Promise<StockResearchReport>
+  getStockResearchRunBySession(workspaceId: string, sessionId: string): Promise<StockResearchRunRecord | null>
+  retryStockResearchPersistence(workspaceId: string, sessionId: string): Promise<RetryStockResearchPersistenceResult>
   deleteSession(sessionId: string): Promise<void>
   sendMessage(sessionId: string, message: string, attachments?: FileAttachment[], storedAttachments?: StoredAttachmentType[], options?: SendMessageOptions): Promise<void>
   cancelProcessing(sessionId: string, silent?: boolean): Promise<void>

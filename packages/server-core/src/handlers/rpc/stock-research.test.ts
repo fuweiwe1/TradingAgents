@@ -3,7 +3,7 @@ import { RPC_CHANNELS } from '@craft-agent/shared/protocol'
 import type { HandlerFn, RpcServer } from '../../transport/types'
 import { registerStockResearchHandlers } from './stock-research'
 
-function createHarness() {
+function createHarness(options?: { sendError?: Error }) {
   const handlers = new Map<string, HandlerFn>()
   const calls: Array<{ method: string; args: unknown[] }> = []
   const storageState = {
@@ -35,6 +35,7 @@ function createHarness() {
     },
     async sendMessage(sessionId: string, message: string) {
       calls.push({ method: 'sendMessage', args: [sessionId, message] })
+      if (options?.sendError) throw options.sendError
     },
   }
   const stockStorage = {
@@ -45,6 +46,26 @@ function createHarness() {
         sessionId: (input as { sessionId: string }).sessionId,
         symbol: (input as { symbol: unknown }).symbol,
         status: 'created',
+      }
+    },
+    markResearchRunRunning(runId: string) {
+      calls.push({ method: 'markResearchRunRunning', args: [runId] })
+      return { id: runId, status: 'running' }
+    },
+    markResearchPersistenceFailed(runId: string, message: string) {
+      calls.push({
+        method: 'markResearchPersistenceFailed',
+        args: [runId, message],
+      })
+      return { id: runId, status: 'failed', errorMessage: message }
+    },
+    getResearchRunBySessionId(sessionId: string) {
+      calls.push({ method: 'getResearchRunBySessionId', args: [sessionId] })
+      return {
+        id: 'run-1',
+        sessionId,
+        status: 'failed',
+        errorMessage: 'Missing section',
       }
     },
     addWatchlistItem(input: unknown) {
@@ -72,6 +93,12 @@ function createHarness() {
       return storageState.reports[0]
     },
   }
+  const stockResearchPersistence = {
+    async retry(sessionId: string) {
+      calls.push({ method: 'retryPersistence', args: [sessionId] })
+      return { status: 'regenerating' as const }
+    },
+  }
   const server: RpcServer = {
     handle(channel, handler) { handlers.set(channel, handler) },
     push() {},
@@ -83,6 +110,7 @@ function createHarness() {
   registerStockResearchHandlers(server, {
     sessionManager,
     stockStorage,
+    stockResearchPersistence,
     platform: { logger: console },
   } as any)
 
@@ -94,6 +122,12 @@ function createHarness() {
   const removeWatchlistItem = handlers.get(RPC_CHANNELS.stockResearch.REMOVE_WATCHLIST_ITEM)
   const listReports = handlers.get(RPC_CHANNELS.stockResearch.LIST_REPORTS)
   const getReport = handlers.get(RPC_CHANNELS.stockResearch.GET_REPORT)
+  const getRunBySession = handlers.get(
+    RPC_CHANNELS.stockResearch.GET_RUN_BY_SESSION,
+  )
+  const retryPersistence = handlers.get(
+    RPC_CHANNELS.stockResearch.RETRY_PERSISTENCE,
+  )
   return {
     createRun,
     addWatchlistItem,
@@ -102,6 +136,8 @@ function createHarness() {
     removeWatchlistItem,
     listReports,
     getReport,
+    getRunBySession,
+    retryPersistence,
     calls,
   }
 }
@@ -146,16 +182,37 @@ describe('stock research RPC handlers', () => {
         method: 'createSession',
         args: ['workspace-1', { name: expectedSessionName }],
       })
-      expect(calls[1]?.method).toBe('sendMessage')
-      expect(calls[1]?.args[0]).toBe('session-1')
-      expect(String(calls[1]?.args[1])).toContain(expectedSymbol.displaySymbol)
-      expect(String(calls[1]?.args[1])).toContain('报告生成')
-      expect(calls[2]).toEqual({
+      expect(calls[1]).toEqual({
         method: 'createResearchRun',
         args: [{ sessionId: 'session-1', symbol: expect.objectContaining(expectedSymbol) }],
       })
+      expect(calls[2]).toEqual({
+        method: 'markResearchRunRunning',
+        args: ['run-1'],
+      })
+      expect(calls[3]?.method).toBe('sendMessage')
+      expect(calls[3]?.args[0]).toBe('session-1')
+      expect(String(calls[3]?.args[1])).toContain(expectedSymbol.displaySymbol)
+      expect(String(calls[3]?.args[1])).toContain('## 报告生成')
     })
   }
+
+  test('marks the research run failed when the initial message cannot be sent', async () => {
+    const { createRun, calls } = createHarness({
+      sendError: new Error('send failed'),
+    })
+
+    await expect(createRun(
+      { clientId: 'client-1', workspaceId: 'workspace-1', webContentsId: null },
+      'workspace-1',
+      { symbol: 'AAPL' },
+    )).rejects.toThrow('send failed')
+
+    expect(calls).toContainEqual({
+      method: 'markResearchPersistenceFailed',
+      args: ['run-1', '启动研究失败：send failed'],
+    })
+  })
 
   test('rejects invalid stock symbols before creating a session', async () => {
     const { createRun, calls } = createHarness()
@@ -171,6 +228,8 @@ describe('stock research RPC handlers', () => {
       removeWatchlistItem,
       listReports,
       getReport,
+      getRunBySession,
+      retryPersistence,
       calls,
     } = createHarness()
 
@@ -180,6 +239,8 @@ describe('stock research RPC handlers', () => {
     expect(removeWatchlistItem).toBeFunction()
     expect(listReports).toBeFunction()
     expect(getReport).toBeFunction()
+    expect(getRunBySession).toBeFunction()
+    expect(retryPersistence).toBeFunction()
 
     await expect(addWatchlistItem!({ clientId: 'client-1', workspaceId: 'workspace-1', webContentsId: null }, 'workspace-1', {
       symbol: 'AAPL',
@@ -212,6 +273,22 @@ describe('stock research RPC handlers', () => {
       id: 'report-1',
       contentMarkdown: '# AAPL',
     })
+    await expect(getRunBySession!(
+      { clientId: 'client-1', workspaceId: 'workspace-1', webContentsId: null },
+      'workspace-1',
+      'session-1',
+    )).resolves.toMatchObject({
+      id: 'run-1',
+      sessionId: 'session-1',
+      status: 'failed',
+    })
+    await expect(retryPersistence!(
+      { clientId: 'client-1', workspaceId: 'workspace-1', webContentsId: null },
+      'workspace-1',
+      'session-1',
+    )).resolves.toEqual({
+      status: 'regenerating',
+    })
 
     expect(calls.map((call) => call.method)).toContain('addWatchlistItem')
     expect(calls.map((call) => call.method)).toContain('listWatchlistItems')
@@ -222,5 +299,7 @@ describe('stock research RPC handlers', () => {
     expect(calls.map((call) => call.method)).toContain('removeWatchlistItem')
     expect(calls.map((call) => call.method)).toContain('listResearchReports')
     expect(calls.map((call) => call.method)).toContain('getResearchReport')
+    expect(calls.map((call) => call.method)).toContain('getResearchRunBySessionId')
+    expect(calls.map((call) => call.method)).toContain('retryPersistence')
   })
 })

@@ -4,7 +4,10 @@ import type { IOAuthFlowStore } from './oauth-flow-store-interface'
 import type { IBrowserPaneManager } from './browser-pane-manager-interface'
 import type { IWindowManager } from './window-manager-interface'
 import type { IMessagingGatewayRegistry } from './messaging-registry-interface'
-import type { StockStorage } from '../stock'
+import type {
+  StockResearchPersistenceCoordinator,
+  StockStorage,
+} from '../stock'
 
 /**
  * Generic handler dependency bag.
@@ -29,4 +32,5 @@ export interface HandlerDeps<
   oauthFlowStore: TOAuthFlowStore
   messagingRegistry?: IMessagingGatewayRegistry
   stockStorage?: StockStorage
+  stockResearchPersistence?: StockResearchPersistenceCoordinator
 }

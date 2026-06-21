@@ -384,6 +384,8 @@ export const REMOTE_ELIGIBLE_CHANNELS = new Set<string>([
   RPC_CHANNELS.stockResearch.SAVE_REPORT,
   RPC_CHANNELS.stockResearch.LIST_REPORTS,
   RPC_CHANNELS.stockResearch.GET_REPORT,
+  RPC_CHANNELS.stockResearch.GET_RUN_BY_SESSION,
+  RPC_CHANNELS.stockResearch.RETRY_PERSISTENCE,
 
   // labels — workspace metadata
   RPC_CHANNELS.labels.LIST,

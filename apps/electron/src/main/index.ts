@@ -91,7 +91,10 @@ import type { PlatformServices } from '../runtime/platform'
 import { createElectronPlatform } from './platform'
 import type { HandlerDeps } from './handlers/handler-deps'
 import { bootstrapServer, releaseServerLock } from '@craft-agent/server-core/bootstrap'
-import { StockStorageService } from '@craft-agent/server-core/stock'
+import {
+  StockResearchPersistenceCoordinator,
+  StockStorageService,
+} from '@craft-agent/server-core/stock'
 import { createMessagingBootstrap, type MessagingBootstrapHandle } from '@craft-agent/messaging-gateway'
 import { getCredentialManager } from '@craft-agent/shared/credentials'
 import { initModelRefreshService, getModelRefreshService, setFetcherPlatform } from '@craft-agent/server-core/model-fetchers'
@@ -695,6 +698,14 @@ app.whenReady().then(async () => {
               pairingMode: 'qr',
             },
           })
+          const stockStorage = getStockStorage()
+          const stockResearchPersistence =
+            new StockResearchPersistenceCoordinator({
+              storage: stockStorage,
+              sessionManager: sm,
+              logger: p.logger,
+            })
+          stockResearchPersistence.start()
           return {
             sessionManager: sm,
             platform: p,
@@ -702,7 +713,8 @@ app.whenReady().then(async () => {
             browserPaneManager: browserPaneManager ?? undefined,
             oauthFlowStore: ofs,
             messagingRegistry: messagingHandle.registry,
-            stockStorage: getStockStorage(),
+            stockStorage,
+            stockResearchPersistence,
           }
         },
         // Headless: register only core handlers (no GUI handlers for browser, settings, etc.)

@@ -31,7 +31,10 @@ import { readFileSync, existsSync } from 'node:fs'
 import { version as packageVersion } from '../package.json'
 import { enableDebug } from '@craft-agent/shared/utils/debug'
 import { bootstrapServer, startHealthHttpServer, generateServerToken } from '@craft-agent/server-core/bootstrap'
-import { StockStorageService } from '@craft-agent/server-core/stock'
+import {
+  StockResearchPersistenceCoordinator,
+  StockStorageService,
+} from '@craft-agent/server-core/stock'
 import { validateSession, createWebuiHandler, nodeHttpAdapter } from '@craft-agent/server-core/webui'
 import type { WebuiHandler } from '@craft-agent/server-core/webui'
 import { getCredentialManager } from '@craft-agent/shared/credentials'
@@ -228,12 +231,21 @@ const instance = await (async () => {
             pairingMode: 'qr',
           },
         })
+        const stockStorage = getStockStorage()
+        const stockResearchPersistence =
+          new StockResearchPersistenceCoordinator({
+            storage: stockStorage,
+            sessionManager,
+            logger: platform.logger,
+          })
+        stockResearchPersistence.start()
         return {
           sessionManager,
           platform,
           oauthFlowStore,
           messagingRegistry: messagingHandle.registry,
-          stockStorage: getStockStorage(),
+          stockStorage,
+          stockResearchPersistence,
         }
       },
       registerAllRpcHandlers: registerCoreRpcHandlers,

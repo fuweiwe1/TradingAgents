@@ -132,3 +132,7 @@ export interface SaveCompletedStockResearchInput {
   contentMarkdown: string
   steps: Record<StockResearchStepKey, string>
 }
+
+export interface RetryStockResearchPersistenceResult {
+  status: 'completed' | 'regenerating' | 'running'
+}
