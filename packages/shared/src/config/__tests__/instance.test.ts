@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test';
 import {
+  existsSync,
   mkdirSync,
   mkdtempSync,
   rmSync,
@@ -109,6 +110,47 @@ describe('resolveInstanceConfig', () => {
         configAlias,
         process.platform === 'win32' ? 'junction' : 'dir',
       );
+
+      expect(() =>
+        resolveInstanceConfig(
+          {
+            CRAFT_INSTANCE_ID: 'stockcraft-dev',
+            CRAFT_APP_NAME: 'StockCraft Dev',
+            CRAFT_CONFIG_DIR: configAlias,
+            CRAFT_ELECTRON_USER_DATA_DIR: join(tempRoot, 'stockcraft-user-data'),
+            CRAFT_DEEPLINK_SCHEME: 'stockcraft-dev',
+            CRAFT_VITE_PORT: '5174',
+          },
+          {
+            homeDir,
+            appDataDir: join(tempRoot, 'app-data'),
+          },
+        ),
+      ).toThrow(
+        'development instance cannot use the production config directory',
+      );
+    } finally {
+      rmSync(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  test('rejects an aliased production path before its leaf exists', () => {
+    const tempRoot = mkdtempSync(join(tmpdir(), 'craft-instance-test-'));
+    const homeDir = join(tempRoot, 'home');
+    const homeAlias = join(tempRoot, 'home-alias');
+    const productionConfigDir = join(homeDir, '.craft-agent');
+    const configAlias = join(homeAlias, '.craft-agent');
+
+    mkdirSync(homeDir, { recursive: true });
+
+    try {
+      symlinkSync(
+        homeDir,
+        homeAlias,
+        process.platform === 'win32' ? 'junction' : 'dir',
+      );
+      expect(existsSync(productionConfigDir)).toBe(false);
+      expect(existsSync(configAlias)).toBe(false);
 
       expect(() =>
         resolveInstanceConfig(

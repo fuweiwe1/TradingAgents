@@ -1,6 +1,6 @@
 import { existsSync, realpathSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { basename, dirname, join, resolve } from 'node:path';
 
 export interface InstanceEnvironment {
   [key: string]: string | undefined;
@@ -37,9 +37,23 @@ const NON_PRODUCTION_REQUIRED_FIELDS = [
 
 function defaultRealpath(path: string): string {
   const resolvedPath = resolve(path);
-  return existsSync(resolvedPath)
-    ? realpathSync.native(resolvedPath)
-    : resolvedPath;
+  const unresolvedSegments: string[] = [];
+  let existingAncestor = resolvedPath;
+
+  while (!existsSync(existingAncestor)) {
+    const parent = dirname(existingAncestor);
+    if (parent === existingAncestor) {
+      return resolvedPath;
+    }
+
+    unresolvedSegments.unshift(basename(existingAncestor));
+    existingAncestor = parent;
+  }
+
+  return resolve(
+    realpathSync.native(existingAncestor),
+    ...unresolvedSegments,
+  );
 }
 
 function pathsEqual(
