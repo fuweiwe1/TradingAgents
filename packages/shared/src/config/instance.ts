@@ -1,3 +1,4 @@
+import { existsSync, realpathSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
 
@@ -14,6 +15,7 @@ export interface InstanceEnvironment {
 export interface InstancePathContext {
   homeDir: string;
   appDataDir: string;
+  realpath?: (path: string) => string;
 }
 
 export interface CraftInstanceConfig {
@@ -25,9 +27,28 @@ export interface CraftInstanceConfig {
   vitePort: number;
 }
 
-function pathsEqual(left: string, right: string): boolean {
-  const normalizedLeft = resolve(left);
-  const normalizedRight = resolve(right);
+const NON_PRODUCTION_REQUIRED_FIELDS = [
+  'CRAFT_APP_NAME',
+  'CRAFT_CONFIG_DIR',
+  'CRAFT_ELECTRON_USER_DATA_DIR',
+  'CRAFT_DEEPLINK_SCHEME',
+  'CRAFT_VITE_PORT',
+] as const satisfies readonly (keyof InstanceEnvironment)[];
+
+function defaultRealpath(path: string): string {
+  const resolvedPath = resolve(path);
+  return existsSync(resolvedPath)
+    ? realpathSync.native(resolvedPath)
+    : resolvedPath;
+}
+
+function pathsEqual(
+  left: string,
+  right: string,
+  realpath: (path: string) => string,
+): boolean {
+  const normalizedLeft = resolve(realpath(left));
+  const normalizedRight = resolve(realpath(right));
 
   return process.platform === 'win32'
     ? normalizedLeft.toLowerCase() === normalizedRight.toLowerCase()
@@ -42,6 +63,19 @@ export function resolveInstanceConfig(
   },
 ): CraftInstanceConfig {
   const instanceId = env.CRAFT_INSTANCE_ID || 'production';
+  if (instanceId !== 'production') {
+    const missingFields = NON_PRODUCTION_REQUIRED_FIELDS.filter(
+      field => !env[field]?.trim(),
+    );
+
+    if (missingFields.length > 0) {
+      throw new Error(
+        `Non-production instance ${instanceId} is missing required environment fields: ${missingFields.join(', ')}`,
+      );
+    }
+  }
+
+  const canonicalizePath = context.realpath || defaultRealpath;
   const productionConfigDir = resolve(context.homeDir, '.craft-agent');
   const configDir = resolve(env.CRAFT_CONFIG_DIR || productionConfigDir);
   const electronUserDataDir = env.CRAFT_ELECTRON_USER_DATA_DIR
@@ -55,14 +89,17 @@ export function resolveInstanceConfig(
 
   if (
     instanceId !== 'production' &&
-    pathsEqual(configDir, productionConfigDir)
+    pathsEqual(configDir, productionConfigDir, canonicalizePath)
   ) {
     throw new Error(
       'development instance cannot use the production config directory',
     );
   }
 
-  if (electronUserDataDir && pathsEqual(electronUserDataDir, configDir)) {
+  if (
+    electronUserDataDir &&
+    pathsEqual(electronUserDataDir, configDir, canonicalizePath)
+  ) {
     throw new Error('configDir and electronUserDataDir must be different');
   }
 
