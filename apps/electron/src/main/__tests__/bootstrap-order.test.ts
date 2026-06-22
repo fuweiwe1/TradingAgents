@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test'
-import { configureElectronInstance } from '../bootstrap'
+import { configureElectronInstance } from '../configure-instance'
 
 test('sets app identity before loading main implementation', async () => {
   const calls: string[] = []
@@ -54,4 +54,15 @@ test('does not override Electron user data for production defaults', async () =>
   })
 
   expect(calls).toEqual(['name:Craft Agents', 'load-main'])
+})
+
+test('bootstrap always runs and handles failures exactly once', async () => {
+  const bootstrapSource = await Bun.file(
+    new URL('../bootstrap.ts', import.meta.url),
+  ).text()
+
+  expect(bootstrapSource).not.toContain('NODE_ENV')
+  expect(bootstrapSource.match(/\.catch\(/g)).toHaveLength(1)
+  expect(bootstrapSource.match(/app\.exit\(1\)/g)).toHaveLength(1)
+  expect(bootstrapSource).not.toContain('await import(')
 })
