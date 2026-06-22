@@ -887,3 +887,31 @@
 - Known risk/blocker:
   - Dual-instance verification will interact with the user's installed Craft Agents process and must preserve its data; implementation tests must use temporary directories until the final explicit smoke test.
   - On this Windows machine, use `init.ps1`; the WSL `/bin/bash` path remains unavailable.
+
+### Session 036
+
+- Date: 2026-06-22
+- Goal: Implement infra-002 Task 3, bootstrapping Electron instance identity before business imports.
+- Completed:
+  - Added `apps/electron/src/main/bootstrap.ts` with a dependency-injected `configureElectronInstance` helper.
+  - The helper sets the Electron app name, conditionally sets `userData`, and only then dynamically loads the existing main implementation.
+  - Added focused order coverage, including production defaults where `electronUserDataDir` is null and `setPath` must not run.
+  - Removed the late `app.setName` call from `apps/electron/src/main/index.ts`.
+  - Switched one-shot development, watch mode, root main build, Win32 build, Electron package scripts, and the legacy Windows package build script from `index.ts` to `bootstrap.ts`.
+  - Kept the generated CJS bundle free of top-level await; bootstrap failures log `Failed to bootstrap Electron instance:` and exit Electron with code 1.
+- TDD record:
+  - RED: `bun test apps/electron/src/main/__tests__/bootstrap-order.test.ts` failed because `../bootstrap` did not exist.
+  - GREEN: the same focused command passed with 2 tests and 0 failures after the minimal bootstrap implementation.
+- Verification:
+  - Task 1 baseline: `bun test packages/shared/src/config/__tests__/instance.test.ts` passed with 14 tests.
+  - Task 2 baseline: `bun test scripts/electron-instance.test.ts` passed with 15 tests.
+  - `cd apps/electron; bun run typecheck`: passed.
+  - `cd apps/electron; bun run build:main:win`: passed and produced `dist/main.cjs`.
+  - `bun run electron:build:main`: passed and verified the root main-process bundle.
+  - Build-entry grep found no `main/index.ts` references under active build/watch scripts; remaining references are documentation, tests, or resource guidance only.
+- Current progress:
+  - `infra-002` remains `in_progress`; Task 3 is complete and Task 4 is next.
+  - Current branch: `codex/infra-002-instance-isolation-impl`.
+- Known risk/blocker:
+  - No GUI was launched for this task, per instruction; final dual-instance behavior remains part of the later explicit acceptance task.
+  - On this Windows machine, use `init.ps1`; the WSL `/bin/bash` path remains unavailable.

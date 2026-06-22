@@ -457,7 +457,7 @@ async function main(): Promise<void> {
   // Build main and preload entries in parallel
   const [mainResult, preloadResult, toolbarPreloadResult] = await Promise.all([
     runEsbuild(
-      "apps/electron/src/main/index.ts",
+      "apps/electron/src/main/bootstrap.ts",
       "apps/electron/dist/main.cjs",
       oauthDefines,
       { alias: MAIN_PROCESS_ALIAS }
@@ -546,7 +546,7 @@ async function main(): Promise<void> {
 
   // 2. Main process watcher (using esbuild watch API)
   const mainContext = await esbuild.context({
-    entryPoints: [join(ROOT_DIR, "apps/electron/src/main/index.ts")],
+    entryPoints: [join(ROOT_DIR, "apps/electron/src/main/bootstrap.ts")],
     bundle: true,
     platform: "node",
     format: "cjs",

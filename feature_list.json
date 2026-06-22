@@ -257,7 +257,8 @@
         "2026-06-21: 用户确认采用完整实例隔离方案，要求原版与开发版互不干扰。",
         "2026-06-21: 已审计现有边界；CRAFT_CONFIG_DIR 仅覆盖部分路径，StockCraft DB、窗口状态、凭据、workspace、日志、消息目录、interceptor 等仍存在 ~/.craft-agent 硬编码。",
         "2026-06-21: 已创建 docs/superpowers/specs/2026-06-21-infra-002-instance-isolation-design.md，定义 StockCraft Dev 独立配置根目录、Electron userData、单实例锁、Deep Link、端口和发行包身份。",
-        "2026-06-21: 用户批准设计；已创建 docs/superpowers/plans/2026-06-21-infra-002-instance-isolation.md，将实现拆为统一实例配置、开发启动默认值、Electron 早期 bootstrap、共享/服务路径迁移、子进程继承、硬编码守卫、开发包身份和双实例验收九个 TDD 任务。"
+        "2026-06-21: 用户批准设计；已创建 docs/superpowers/plans/2026-06-21-infra-002-instance-isolation.md，将实现拆为统一实例配置、开发启动默认值、Electron 早期 bootstrap、共享/服务路径迁移、子进程继承、硬编码守卫、开发包身份和双实例验收九个 TDD 任务。",
+        "2026-06-22: Task 3 complete: Electron main now enters through bootstrap.ts, which sets app name and isolated userData before dynamically loading index.ts. The focused bootstrap-order test passed with production null-userData coverage; Electron typecheck, apps/electron build:main:win, and root electron:build:main passed. All active main-process build/watch entries now reference bootstrap.ts."
       ],
       "notes": "原版数据不迁移、不复制、不修改；开发版从空的 ~/.stockcraft-dev 开始。设计已批准，详细 TDD 实施计划已落盘，尚未修改生产实现。"
     }
