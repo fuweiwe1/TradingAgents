@@ -1,12 +1,10 @@
-import { INSTANCE_CONFIG } from '@craft-agent/shared/config/instance'
 import { app } from 'electron'
-import { configureElectronInstance } from './configure-instance'
+import { runElectronBootstrap } from './configure-instance'
 
-void configureElectronInstance({
+void runElectronBootstrap({
   app,
-  config: INSTANCE_CONFIG,
+  loadConfig: async () =>
+    (await import('@craft-agent/shared/config/instance')).INSTANCE_CONFIG,
   loadMain: () => import('./index'),
-}).catch(error => {
-  console.error('Failed to bootstrap Electron instance:', error)
-  app.exit(1)
+  logger: console,
 })
