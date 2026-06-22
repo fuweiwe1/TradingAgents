@@ -1,8 +1,10 @@
 import { describe, expect, test } from 'bun:test';
 import {
   existsSync,
+  lstatSync,
   mkdirSync,
   mkdtempSync,
+  readlinkSync,
   rmSync,
   symlinkSync,
 } from 'node:fs';
@@ -170,6 +172,85 @@ describe('resolveInstanceConfig', () => {
       ).toThrow(
         'development instance cannot use the production config directory',
       );
+    } finally {
+      rmSync(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  test('rejects a dangling alias whose target is the production config directory', () => {
+    const tempRoot = mkdtempSync(join(tmpdir(), 'craft-instance-test-'));
+    const homeDir = join(tempRoot, 'home');
+    const productionConfigDir = join(homeDir, '.craft-agent');
+    const configAlias = join(tempRoot, 'stockcraft-config');
+
+    mkdirSync(homeDir, { recursive: true });
+
+    try {
+      symlinkSync(
+        productionConfigDir,
+        configAlias,
+        process.platform === 'win32' ? 'junction' : 'dir',
+      );
+      expect(lstatSync(configAlias).isSymbolicLink()).toBe(true);
+      expect(existsSync(configAlias)).toBe(false);
+      expect(resolve(readlinkSync(configAlias))).toBe(productionConfigDir);
+
+      expect(() =>
+        resolveInstanceConfig(
+          {
+            CRAFT_INSTANCE_ID: 'stockcraft-dev',
+            CRAFT_APP_NAME: 'StockCraft Dev',
+            CRAFT_CONFIG_DIR: configAlias,
+            CRAFT_ELECTRON_USER_DATA_DIR: join(tempRoot, 'stockcraft-user-data'),
+            CRAFT_DEEPLINK_SCHEME: 'stockcraft-dev',
+            CRAFT_VITE_PORT: '5174',
+          },
+          {
+            homeDir,
+            appDataDir: join(tempRoot, 'app-data'),
+          },
+        ),
+      ).toThrow(
+        'development instance cannot use the production config directory',
+      );
+    } finally {
+      rmSync(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  test('rejects symlink cycles while canonicalizing instance paths', () => {
+    const tempRoot = mkdtempSync(join(tmpdir(), 'craft-instance-test-'));
+    const firstAlias = join(tempRoot, 'first-alias');
+    const secondAlias = join(tempRoot, 'second-alias');
+
+    try {
+      symlinkSync(
+        secondAlias,
+        firstAlias,
+        process.platform === 'win32' ? 'junction' : 'dir',
+      );
+      symlinkSync(
+        firstAlias,
+        secondAlias,
+        process.platform === 'win32' ? 'junction' : 'dir',
+      );
+
+      expect(() =>
+        resolveInstanceConfig(
+          {
+            CRAFT_INSTANCE_ID: 'stockcraft-dev',
+            CRAFT_APP_NAME: 'StockCraft Dev',
+            CRAFT_CONFIG_DIR: firstAlias,
+            CRAFT_ELECTRON_USER_DATA_DIR: join(tempRoot, 'stockcraft-user-data'),
+            CRAFT_DEEPLINK_SCHEME: 'stockcraft-dev',
+            CRAFT_VITE_PORT: '5174',
+          },
+          {
+            homeDir: join(tempRoot, 'home'),
+            appDataDir: join(tempRoot, 'app-data'),
+          },
+        ),
+      ).toThrow('Symlink cycle detected while resolving path');
     } finally {
       rmSync(tempRoot, { recursive: true, force: true });
     }

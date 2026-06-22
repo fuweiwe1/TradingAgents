@@ -1,4 +1,4 @@
-import { existsSync, realpathSync } from 'node:fs';
+import { lstatSync, readlinkSync, realpathSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
 
@@ -35,24 +35,52 @@ const NON_PRODUCTION_REQUIRED_FIELDS = [
   'CRAFT_VITE_PORT',
 ] as const satisfies readonly (keyof InstanceEnvironment)[];
 
-function defaultRealpath(path: string): string {
+function defaultRealpath(
+  path: string,
+  resolvingLinks = new Set<string>(),
+): string {
   const resolvedPath = resolve(path);
-  const unresolvedSegments: string[] = [];
-  let existingAncestor = resolvedPath;
+  try {
+    const stats = lstatSync(resolvedPath);
+    if (stats.isSymbolicLink()) {
+      const cycleKey =
+        process.platform === 'win32'
+          ? resolvedPath.toLowerCase()
+          : resolvedPath;
+      if (resolvingLinks.has(cycleKey)) {
+        throw new Error(
+          `Symlink cycle detected while resolving path: ${resolvedPath}`,
+        );
+      }
 
-  while (!existsSync(existingAncestor)) {
-    const parent = dirname(existingAncestor);
-    if (parent === existingAncestor) {
-      return resolvedPath;
+      resolvingLinks.add(cycleKey);
+      try {
+        const linkTarget = readlinkSync(resolvedPath);
+        return defaultRealpath(
+          resolve(dirname(resolvedPath), linkTarget),
+          resolvingLinks,
+        );
+      } finally {
+        resolvingLinks.delete(cycleKey);
+      }
     }
 
-    unresolvedSegments.unshift(basename(existingAncestor));
-    existingAncestor = parent;
+    return realpathSync.native(resolvedPath);
+  } catch (error) {
+    const errorCode = (error as NodeJS.ErrnoException).code;
+    if (errorCode !== 'ENOENT' && errorCode !== 'ENOTDIR') {
+      throw error;
+    }
+  }
+
+  const parent = dirname(resolvedPath);
+  if (parent === resolvedPath) {
+    return resolvedPath;
   }
 
   return resolve(
-    realpathSync.native(existingAncestor),
-    ...unresolvedSegments,
+    defaultRealpath(parent, resolvingLinks),
+    basename(resolvedPath),
   );
 }
 
