@@ -915,3 +915,29 @@
 - Known risk/blocker:
   - No GUI was launched for this task, per instruction; final dual-instance behavior remains part of the later explicit acceptance task.
   - On this Windows machine, use `init.ps1`; the WSL `/bin/bash` path remains unavailable.
+
+### Session 037
+
+- Date: 2026-06-22
+- Goal: Implement infra-002 Task 4, routing shared runtime storage through the centralized instance config directory.
+- Completed:
+  - Added a subprocess regression test that loads production modules with a temporary `CRAFT_CONFIG_DIR`.
+  - Routed default workspaces, docs, release notes, encrypted credentials, interceptor config/log/API-error fallback, provider-domain logo cache, browser prerequisite docs, and app permissions through `CONFIG_DIR`.
+  - Exported only the production constants/accessors needed to inspect those real paths.
+  - Kept secure-storage `homedir()` usage only for machine-key derivation, not filesystem placement.
+- TDD record:
+  - RED: `bun test packages/shared/src/config/__tests__/instance-path-consumers.test.ts` failed because workspace and interceptor paths still resolved under `C:\Users\-\.craft-agent`, while the remaining required path exports/accessors were absent.
+  - GREEN: the same focused test passed with 1 test and 0 failures after the minimal path changes.
+- Verification:
+  - Tasks 1-3 baselines passed: instance config 14 tests, Electron instance launcher 15 tests, Electron bootstrap 4 tests.
+  - Focused Task 4 suite passed: 18 tests, 0 failures across the new subprocess test, instance config, interceptor behavior, and interceptor packaging contract.
+  - `bun run typecheck:shared`: passed.
+  - `git diff --check`: passed with only expected Windows line-ending warnings.
+  - Permissions migration assertions passed, but its standalone Windows cleanup still exits with `EBUSY` because the test removes the directory that remains its current working directory.
+  - The same-process permissions CLI flag test still mutates `CRAFT_CONFIG_DIR` after importing the module; Task 4 intentionally captures `CONFIG_DIR` at module load, so path-isolation coverage now uses subprocesses.
+- Current progress:
+  - `infra-002` remains `in_progress`; Tasks 1-4 are complete and Task 5 is next.
+  - Current branch: `codex/infra-002-instance-isolation-impl`.
+- Known risk/blocker:
+  - Permissions tests that need different `CRAFT_CONFIG_DIR` values must load the module in separate subprocesses.
+  - On this Windows machine, use `init.ps1`; the WSL `/bin/bash` path remains unavailable.

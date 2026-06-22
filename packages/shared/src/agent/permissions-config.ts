@@ -12,7 +12,6 @@
  */
 
 import { existsSync, readFileSync, mkdirSync, writeFileSync } from 'fs';
-import { homedir } from 'os';
 import { join } from 'path';
 import { debug } from '../utils/debug.ts';
 import { readJsonFileSync, safeJsonParse } from '../utils/files.ts';
@@ -43,11 +42,14 @@ let permissionsInitialized = false;
 /**
  * Get the app-level permissions directory.
  * Default permissions are stored at ~/.craft-agent/permissions/
- * Reads env var dynamically so tests can override via CRAFT_CONFIG_DIR.
  */
 export function getAppPermissionsDir(): string {
-  const configDir = process.env.CRAFT_CONFIG_DIR || join(homedir(), '.craft-agent');
-  return join(configDir, 'permissions');
+  return join(CONFIG_DIR, 'permissions');
+}
+
+/** Get the app-level default permissions file path. */
+export function getDefaultPermissionsPath(): string {
+  return join(getAppPermissionsDir(), 'default.json');
 }
 
 /**
@@ -81,7 +83,7 @@ export function ensureDefaultPermissions(): void {
     return;
   }
 
-  const destPath = join(permissionsDir, 'default.json');
+  const destPath = getDefaultPermissionsPath();
   const srcPath = join(bundledPermissionsDir, 'default.json');
 
   if (!existsSync(srcPath)) {
@@ -186,7 +188,7 @@ function migratePermissions(
  * Returns null if file doesn't exist or is invalid.
  */
 export function loadDefaultPermissions(): PermissionsCustomConfig | null {
-  const defaultPath = join(getAppPermissionsDir(), 'default.json');
+  const defaultPath = getDefaultPermissionsPath();
   if (!existsSync(defaultPath)) {
     debug('[Permissions] No default.json found at', defaultPath);
     return null;
@@ -694,7 +696,7 @@ class PermissionsConfigCache {
       // Add permission file paths for actionable error messages
       permissionPaths: {
         workspacePath: getWorkspacePermissionsPath(context.workspaceRootPath),
-        appDefaultPath: join(getAppPermissionsDir(), 'default.json'),
+        appDefaultPath: getDefaultPermissionsPath(),
         docsPath: join(CONFIG_DIR, 'docs', 'permissions.md'),
       },
     };

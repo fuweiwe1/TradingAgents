@@ -9,13 +9,12 @@
  */
 
 import { join } from 'path';
-import { homedir } from 'os';
 import { existsSync, mkdirSync, writeFileSync, readdirSync, readFileSync } from 'fs';
+import { CONFIG_DIR } from '../config/paths.ts';
 import { getBundledAssetsDir } from '../utils/paths.ts';
 import { debug } from '../utils/debug.ts';
 
-const CONFIG_DIR = join(homedir(), '.craft-agent');
-const DOCS_DIR = join(CONFIG_DIR, 'docs');
+export const DOCS_DIR = join(CONFIG_DIR, 'docs');
 
 // Track if docs have been initialized this session (prevents re-init on hot reload)
 let docsInitialized = false;
