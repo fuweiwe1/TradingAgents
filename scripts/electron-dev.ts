@@ -5,9 +5,11 @@
 
 import { spawn, type Subprocess } from "bun";
 import { existsSync, rmSync, cpSync, readFileSync, statSync, mkdirSync } from "fs";
-import { join, basename } from "path";
+import { homedir } from "os";
+import { join } from "path";
 import * as esbuild from "esbuild";
 import { downloadUv, type Platform, type Arch } from "./build/common";
+import { resolveElectronDevEnvironment } from "./electron-instance";
 
 const ROOT_DIR = join(import.meta.dir, "..");
 const ELECTRON_DIR = join(ROOT_DIR, "apps/electron");
@@ -72,26 +74,6 @@ async function ensureBundledUvForCurrentPlatform(): Promise<void> {
     rootDir: ROOT_DIR,
     electronDir: ELECTRON_DIR,
   });
-}
-
-// Multi-instance detection (matches detect-instance.sh logic)
-// Detects instance number from folder name suffix (e.g., craft-agents-1 → instance 1)
-function detectInstance(): void {
-  // Don't override if already set (e.g., by sourcing detect-instance.sh first)
-  if (process.env.CRAFT_VITE_PORT) return;
-
-  const folderName = basename(ROOT_DIR);
-  const match = folderName.match(/-(\d+)$/);
-
-  if (match) {
-    const instanceNum = match[1];
-    process.env.CRAFT_INSTANCE_NUMBER = instanceNum;
-    process.env.CRAFT_VITE_PORT = `${instanceNum}173`;
-    process.env.CRAFT_APP_NAME = `Craft Agents [${instanceNum}]`;
-    process.env.CRAFT_CONFIG_DIR = join(process.env.HOME || "", `.craft-agent-${instanceNum}`);
-    process.env.CRAFT_DEEPLINK_SCHEME = `craftagents${instanceNum}`;
-    console.log(`🔢 Instance ${instanceNum} detected: port=${process.env.CRAFT_VITE_PORT}, config=${process.env.CRAFT_CONFIG_DIR}`);
-  }
 }
 
 // Load .env file if it exists
@@ -284,9 +266,12 @@ function getElectronEnv(): Record<string, string> {
   return {
     ...process.env as Record<string, string>,
     VITE_DEV_SERVER_URL: `http://localhost:${vitePort}`,
+    CRAFT_INSTANCE_ID: process.env.CRAFT_INSTANCE_ID || "",
     CRAFT_CONFIG_DIR: process.env.CRAFT_CONFIG_DIR || "",
     CRAFT_APP_NAME: process.env.CRAFT_APP_NAME || "Craft Agents",
+    CRAFT_ELECTRON_USER_DATA_DIR: process.env.CRAFT_ELECTRON_USER_DATA_DIR || "",
     CRAFT_DEEPLINK_SCHEME: process.env.CRAFT_DEEPLINK_SCHEME || "craftagents",
+    CRAFT_VITE_PORT: vitePort,
     CRAFT_INSTANCE_NUMBER: process.env.CRAFT_INSTANCE_NUMBER || "",
   };
 }
@@ -418,8 +403,21 @@ async function main(): Promise<void> {
   console.log("🚀 Starting Electron dev environment...\n");
 
   // Setup
-  detectInstance();
   loadEnvFile();
+  const homeDir =
+    process.env.HOME || process.env.USERPROFILE || homedir();
+  const devInstanceEnv = resolveElectronDevEnvironment({
+    rootDir: ROOT_DIR,
+    homeDir,
+    appDataDir: process.env.APPDATA || join(homeDir, ".config"),
+    env: process.env,
+  });
+  Object.assign(process.env, devInstanceEnv);
+  console.log(
+    `🔒 Instance ${process.env.CRAFT_INSTANCE_ID} (${process.env.CRAFT_APP_NAME}): ` +
+    `config=${process.env.CRAFT_CONFIG_DIR}, ` +
+    `userData=${process.env.CRAFT_ELECTRON_USER_DATA_DIR}`,
+  );
   cleanViteCache();
 
   // Ensure dist directory exists
@@ -639,7 +637,9 @@ async function main(): Promise<void> {
   await cleanup();
 }
 
-main().catch((err) => {
-  console.error("❌ Error:", err);
-  process.exit(1);
-});
+if (import.meta.main) {
+  main().catch((err) => {
+    console.error("❌ Error:", err);
+    process.exit(1);
+  });
+}
