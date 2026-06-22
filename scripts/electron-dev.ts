@@ -272,7 +272,6 @@ function getElectronEnv(): Record<string, string> {
     CRAFT_ELECTRON_USER_DATA_DIR: process.env.CRAFT_ELECTRON_USER_DATA_DIR || "",
     CRAFT_DEEPLINK_SCHEME: process.env.CRAFT_DEEPLINK_SCHEME || "craftagents",
     CRAFT_VITE_PORT: vitePort,
-    CRAFT_INSTANCE_NUMBER: process.env.CRAFT_INSTANCE_NUMBER || "",
   };
 }
 

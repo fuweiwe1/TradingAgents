@@ -46,7 +46,118 @@ describe("resolveElectronDevEnvironment", () => {
       ),
       CRAFT_DEEPLINK_SCHEME: "stockcraft-dev-2",
       CRAFT_VITE_PORT: "2173",
+      CRAFT_INSTANCE_NUMBER: "2",
     });
+  });
+
+  test("preserves an explicit instance number for the base repository", () => {
+    expect(
+      resolveElectronDevEnvironment({
+        rootDir: "C:\\craft_agents",
+        ...context,
+        env: { CRAFT_INSTANCE_NUMBER: "custom-number" },
+      }).CRAFT_INSTANCE_NUMBER,
+    ).toBe("custom-number");
+  });
+
+  test("maps numbered instances without colliding with the base port", () => {
+    const expectedPorts = new Map([
+      [1, "1173"],
+      [4, "4173"],
+      [5, "20005"],
+      [66, "20066"],
+    ]);
+
+    for (const [instanceNumber, expectedPort] of expectedPorts) {
+      expect(
+        resolveElectronDevEnvironment({
+          rootDir: `C:\\craft_agents-${instanceNumber}`,
+          ...context,
+          env: {},
+        }).CRAFT_VITE_PORT,
+      ).toBe(expectedPort);
+    }
+  });
+
+  test("keeps every accepted numbered instance port unique and in range", () => {
+    const ports = new Set<number>();
+
+    for (let instanceNumber = 1; instanceNumber <= 45535; instanceNumber++) {
+      const port = Number(
+        resolveElectronDevEnvironment({
+          rootDir: `C:\\craft_agents-${instanceNumber}`,
+          ...context,
+          env: {},
+        }).CRAFT_VITE_PORT,
+      );
+
+      expect(port).toBeGreaterThanOrEqual(1);
+      expect(port).toBeLessThanOrEqual(65535);
+      expect(ports.has(port)).toBe(false);
+      ports.add(port);
+    }
+
+    expect(ports.size).toBe(45535);
+  });
+
+  test("rejects ambiguous leading-zero numbered instance suffixes", () => {
+    expect(() =>
+      resolveElectronDevEnvironment({
+        rootDir: "C:\\craft_agents-01",
+        ...context,
+        env: {},
+      }),
+    ).toThrow(/leading zero.*use.*-1/i);
+  });
+
+  test("rejects numbered instance zero", () => {
+    expect(() =>
+      resolveElectronDevEnvironment({
+        rootDir: "C:\\craft_agents-0",
+        ...context,
+        env: {},
+      }),
+    ).toThrow(/greater than zero.*remove.*-0/i);
+  });
+
+  test("rejects numbered instance suffixes above the supported port range", () => {
+    expect(() =>
+      resolveElectronDevEnvironment({
+        rootDir: "C:\\craft_agents-45536",
+        ...context,
+        env: {},
+      }),
+    ).toThrow(/45535.*choose.*smaller/i);
+  });
+
+  test("rejects explicit Vite ports containing shell metacharacters", () => {
+    expect(() =>
+      resolveElectronDevEnvironment({
+        rootDir: "C:\\craft_agents",
+        ...context,
+        env: { CRAFT_VITE_PORT: "5173 & echo bad" },
+      }),
+    ).toThrow(/CRAFT_VITE_PORT.*ASCII decimal digits/i);
+  });
+
+  test("rejects explicit Vite port zero", () => {
+    expect(() =>
+      resolveElectronDevEnvironment({
+        rootDir: "C:\\craft_agents",
+        ...context,
+        env: { CRAFT_VITE_PORT: "0" },
+      }),
+    ).toThrow(/CRAFT_VITE_PORT.*between 1 and 65535/i);
+  });
+
+  test("rejects explicit Vite ports above 65535", () => {
+    expect(() =>
+      resolveElectronDevEnvironment({
+        rootDir: "C:\\craft_agents",
+        ...context,
+        env: { CRAFT_VITE_PORT: "65536" },
+      }),
+    ).toThrow(/CRAFT_VITE_PORT.*between 1 and 65535/i);
   });
 
   test("preserves each explicit identity field while filling every missing default", () => {
@@ -57,6 +168,7 @@ describe("resolveElectronDevEnvironment", () => {
       CRAFT_ELECTRON_USER_DATA_DIR: "D:\\custom\\user-data",
       CRAFT_DEEPLINK_SCHEME: "custom-scheme",
       CRAFT_VITE_PORT: "9000",
+      CRAFT_INSTANCE_NUMBER: "custom-number",
     };
 
     for (const [key, value] of Object.entries(explicitValues)) {
@@ -97,6 +209,10 @@ describe("electron-dev launcher wiring", () => {
     );
     expect(source).toContain(
       "CRAFT_ELECTRON_USER_DATA_DIR: process.env.CRAFT_ELECTRON_USER_DATA_DIR",
+    );
+    expect(source).toContain("...process.env as Record<string, string>");
+    expect(source).not.toContain(
+      'CRAFT_INSTANCE_NUMBER: process.env.CRAFT_INSTANCE_NUMBER || ""',
     );
   });
 
