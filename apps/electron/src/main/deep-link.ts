@@ -39,6 +39,7 @@ import { mainLog } from './logger'
 import type { WindowManager } from './window-manager'
 import { RPC_CHANNELS } from '../shared/types'
 import type { EventSink } from '@craft-agent/server-core/transport'
+import { INSTANCE_CONFIG } from '@craft-agent/shared/config/instance'
 
 export interface DeepLinkTarget {
   /** Workspace ID - undefined means use active window */
@@ -92,11 +93,14 @@ function parseRightSidebar(parsed: URL): string | undefined {
 /**
  * Parse a deep link URL into structured target
  */
-export function parseDeepLink(url: string): DeepLinkTarget | null {
+export function parseDeepLink(
+  url: string,
+  deeplinkScheme = INSTANCE_CONFIG.deeplinkScheme,
+): DeepLinkTarget | null {
   try {
     const parsed = new URL(url)
 
-    if (parsed.protocol !== 'craftagents:') {
+    if (parsed.protocol !== `${deeplinkScheme}:`) {
       return null
     }
 

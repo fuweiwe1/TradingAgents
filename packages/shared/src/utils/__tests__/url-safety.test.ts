@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'bun:test'
-import { classifyExternalUrl, isSafeExternalUrl, formatBlockedUrlError } from '../url-safety.ts'
+import {
+  classifyExternalUrl,
+  formatBlockedUrlError,
+  isSafeExternalUrl,
+  normalizeInternalDeeplinkUrl,
+} from '../url-safety.ts'
 
 describe('classifyExternalUrl — safe external (standard web schemes)', () => {
   it('classifies http:// as safe-external', () => {
@@ -46,6 +51,21 @@ describe('classifyExternalUrl — internal deep links', () => {
 
   it('is case-insensitive for the scheme', () => {
     expect(classifyExternalUrl('CRAFTAGENTS://settings').kind).toBe('internal-deeplink')
+  })
+
+  it('classifies the active instance scheme as internal', () => {
+    expect(
+      classifyExternalUrl('stockcraft-dev://settings', 'stockcraft-dev').kind,
+    ).toBe('internal-deeplink')
+  })
+
+  it('rewrites legacy renderer links to the active instance scheme', () => {
+    expect(
+      normalizeInternalDeeplinkUrl(
+        'craftagents://action/new-session?window=focused',
+        'stockcraft-dev',
+      ),
+    ).toBe('stockcraft-dev://action/new-session?window=focused')
   })
 })
 

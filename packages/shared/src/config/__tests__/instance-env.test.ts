@@ -45,6 +45,25 @@ describe('getInstanceEnvironment', () => {
     getInstanceEnvironment(env)
     expect(env).toEqual(INSTANCE_ENV)
   })
+
+  test('falls back to resolved instance config for packaged preset builds', () => {
+    expect(getInstanceEnvironment({}, {
+      instanceId: 'stockcraft-dev',
+      appName: 'StockCraft Dev',
+      configDir: 'C:\\Users\\runtime\\.stockcraft-dev',
+      electronUserDataDir:
+        'C:\\Users\\runtime\\AppData\\Roaming\\StockCraft Dev',
+      deeplinkScheme: 'stockcraft-dev',
+      vitePort: 5173,
+    })).toEqual({
+      CRAFT_INSTANCE_ID: 'stockcraft-dev',
+      CRAFT_APP_NAME: 'StockCraft Dev',
+      CRAFT_CONFIG_DIR: 'C:\\Users\\runtime\\.stockcraft-dev',
+      CRAFT_ELECTRON_USER_DATA_DIR:
+        'C:\\Users\\runtime\\AppData\\Roaming\\StockCraft Dev',
+      CRAFT_DEEPLINK_SCHEME: 'stockcraft-dev',
+    })
+  })
 })
 
 describe('child environment builders', () => {

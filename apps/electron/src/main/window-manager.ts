@@ -5,7 +5,12 @@ import { existsSync } from 'fs'
 import { release } from 'os'
 import { fileURLToPath } from 'url'
 import { getWorkspaceByNameOrId } from '@craft-agent/shared/config'
-import { classifyExternalUrl, formatBlockedUrlError } from '@craft-agent/shared/utils/url-safety'
+import { INSTANCE_CONFIG } from '@craft-agent/shared/config/instance'
+import {
+  classifyExternalUrl,
+  formatBlockedUrlError,
+  normalizeInternalDeeplinkUrl,
+} from '@craft-agent/shared/utils/url-safety'
 import { RPC_CHANNELS, type WindowCloseRequestSource } from '../shared/types'
 import type { SavedWindow } from './window-state'
 
@@ -124,7 +129,14 @@ export class WindowManager {
   }
 
   private openExternalFromRenderer(url: string, context: string, sourceWindow?: BrowserWindow): void {
-    const classification = classifyExternalUrl(url)
+    const normalizedUrl = normalizeInternalDeeplinkUrl(
+      url,
+      INSTANCE_CONFIG.deeplinkScheme,
+    )
+    const classification = classifyExternalUrl(
+      normalizedUrl,
+      INSTANCE_CONFIG.deeplinkScheme,
+    )
 
     if (classification.kind === 'dangerous') {
       windowLog.warn(`[url-safety] Blocked ${context}: ${formatBlockedUrlError(classification)} url=${url}`)
@@ -139,7 +151,7 @@ export class WindowManager {
 
       void import('./deep-link').then(async ({ handleDeepLink }) => {
         const result = await handleDeepLink(
-          url,
+          normalizedUrl,
           this,
           this.eventSink ?? undefined,
           this.clientResolver ?? undefined,

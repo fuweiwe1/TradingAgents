@@ -4,6 +4,7 @@ import { basename, dirname, join, resolve } from 'node:path';
 
 export interface InstanceEnvironment {
   [key: string]: string | undefined;
+  CRAFT_INSTANCE_PRESET?: string;
   CRAFT_INSTANCE_ID?: string;
   CRAFT_APP_NAME?: string;
   CRAFT_CONFIG_DIR?: string;
@@ -97,17 +98,53 @@ function pathsEqual(
     : normalizedLeft === normalizedRight;
 }
 
+function getRuntimeInstanceEnvironment(): InstanceEnvironment {
+  return {
+    ...process.env,
+    // Keep this direct access so packaged development builds can bake a
+    // runtime preset without embedding build-machine-specific absolute paths.
+    CRAFT_INSTANCE_PRESET: process.env.CRAFT_INSTANCE_PRESET,
+  };
+}
+
 export function resolveInstanceConfig(
-  env: InstanceEnvironment = process.env,
+  env: InstanceEnvironment = getRuntimeInstanceEnvironment(),
   context: InstancePathContext = {
     homeDir: homedir(),
     appDataDir: process.env.APPDATA || join(homedir(), '.config'),
   },
 ): CraftInstanceConfig {
-  const instanceId = env.CRAFT_INSTANCE_ID || 'production';
+  const preset = env.CRAFT_INSTANCE_PRESET?.trim();
+  if (preset && preset !== 'stockcraft-dev') {
+    throw new Error(`Unknown CRAFT_INSTANCE_PRESET: ${preset}`);
+  }
+
+  const presetDefaults = preset === 'stockcraft-dev'
+    ? {
+        instanceId: 'stockcraft-dev',
+        appName: 'StockCraft Dev',
+        configDir: join(context.homeDir, '.stockcraft-dev'),
+        electronUserDataDir: join(context.appDataDir, 'StockCraft Dev'),
+        deeplinkScheme: 'stockcraft-dev',
+        vitePort: '5173',
+      }
+    : null;
+
+  const instanceId =
+    env.CRAFT_INSTANCE_ID || presetDefaults?.instanceId || 'production';
   if (instanceId !== 'production') {
     const missingFields = NON_PRODUCTION_REQUIRED_FIELDS.filter(
-      field => !env[field]?.trim(),
+      field => {
+        if (env[field]?.trim()) return false;
+        if (!presetDefaults) return true;
+        return !({
+          CRAFT_APP_NAME: presetDefaults.appName,
+          CRAFT_CONFIG_DIR: presetDefaults.configDir,
+          CRAFT_ELECTRON_USER_DATA_DIR: presetDefaults.electronUserDataDir,
+          CRAFT_DEEPLINK_SCHEME: presetDefaults.deeplinkScheme,
+          CRAFT_VITE_PORT: presetDefaults.vitePort,
+        } as Record<string, string>)[field];
+      },
     );
 
     if (missingFields.length > 0) {
@@ -119,11 +156,18 @@ export function resolveInstanceConfig(
 
   const canonicalizePath = context.realpath || defaultRealpath;
   const productionConfigDir = resolve(context.homeDir, '.craft-agent');
-  const configDir = resolve(env.CRAFT_CONFIG_DIR || productionConfigDir);
-  const electronUserDataDir = env.CRAFT_ELECTRON_USER_DATA_DIR
-    ? resolve(env.CRAFT_ELECTRON_USER_DATA_DIR)
+  const configDir = resolve(
+    env.CRAFT_CONFIG_DIR || presetDefaults?.configDir || productionConfigDir,
+  );
+  const electronUserDataValue =
+    env.CRAFT_ELECTRON_USER_DATA_DIR ||
+    presetDefaults?.electronUserDataDir;
+  const electronUserDataDir = electronUserDataValue
+    ? resolve(electronUserDataValue)
     : null;
-  const vitePort = Number(env.CRAFT_VITE_PORT || '5173');
+  const vitePort = Number(
+    env.CRAFT_VITE_PORT || presetDefaults?.vitePort || '5173',
+  );
 
   if (!Number.isInteger(vitePort) || vitePort < 1 || vitePort > 65535) {
     throw new Error(`Invalid CRAFT_VITE_PORT: ${env.CRAFT_VITE_PORT}`);
@@ -147,10 +191,13 @@ export function resolveInstanceConfig(
 
   return {
     instanceId,
-    appName: env.CRAFT_APP_NAME || 'Craft Agents',
+    appName: env.CRAFT_APP_NAME || presetDefaults?.appName || 'Craft Agents',
     configDir,
     electronUserDataDir,
-    deeplinkScheme: env.CRAFT_DEEPLINK_SCHEME || 'craftagents',
+    deeplinkScheme:
+      env.CRAFT_DEEPLINK_SCHEME ||
+      presetDefaults?.deeplinkScheme ||
+      'craftagents',
     vitePort,
   };
 }

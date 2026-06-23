@@ -4,7 +4,12 @@ import { homedir } from 'os'
 import { execSync } from 'child_process'
 import { RPC_CHANNELS } from '@craft-agent/shared/protocol'
 import { getGitBashPath, setGitBashPath, clearGitBashPath } from '@craft-agent/shared/config'
-import { classifyExternalUrl, formatBlockedUrlError } from '@craft-agent/shared/utils/url-safety'
+import { INSTANCE_CONFIG } from '@craft-agent/shared/config/instance'
+import {
+  classifyExternalUrl,
+  formatBlockedUrlError,
+  normalizeInternalDeeplinkUrl,
+} from '@craft-agent/shared/utils/url-safety'
 import { isUsableGitBashPath, validateGitBashPath } from '@craft-agent/server-core/services'
 import { validateFilePath, getWorkspaceAllowedDirs } from '@craft-agent/server-core/handlers'
 import type { RpcServer } from '@craft-agent/server-core/transport'
@@ -206,7 +211,14 @@ export function registerSystemCoreHandlers(server: RpcServer, deps: HandlerDeps)
   server.handle(RPC_CHANNELS.shell.OPEN_URL, async (ctx, url: string) => {
     deps.platform.logger.info('[OPEN_URL] Received request:', url)
     try {
-      const classification = classifyExternalUrl(url)
+      const normalizedUrl = normalizeInternalDeeplinkUrl(
+        url,
+        INSTANCE_CONFIG.deeplinkScheme,
+      )
+      const classification = classifyExternalUrl(
+        normalizedUrl,
+        INSTANCE_CONFIG.deeplinkScheme,
+      )
       if (classification.kind === 'dangerous') {
         throw new Error(formatBlockedUrlError(classification))
       }
@@ -217,7 +229,13 @@ export function registerSystemCoreHandlers(server: RpcServer, deps: HandlerDeps)
         deps.platform.logger.info('[OPEN_URL] Handling as deep link')
         const { handleDeepLink } = await import('../deep-link')
         const resolver = (wcId: number) => windowManager.getClientIdForWindow(wcId)
-        const result = await handleDeepLink(url, windowManager, server.push.bind(server), resolver, ctx.clientId)
+        const result = await handleDeepLink(
+          normalizedUrl,
+          windowManager,
+          server.push.bind(server),
+          resolver,
+          ctx.clientId,
+        )
         deps.platform.logger.info('[OPEN_URL] Deep link result:', result)
         return
       }

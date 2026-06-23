@@ -1,0 +1,19 @@
+extends: ./electron-builder.yml
+
+appId: com.stockcraft.dev
+productName: StockCraft Dev
+publish: []
+
+win:
+  artifactName: "StockCraft-Dev-${arch}.${ext}"
+
+mac:
+  artifactName: "StockCraft-Dev-${arch}.${ext}"
+
+linux:
+  artifactName: "StockCraft-Dev-${arch}.${ext}"
+
+nsis:
+  oneClick: true
+  perMachine: false
+  deleteAppDataOnUninstall: true

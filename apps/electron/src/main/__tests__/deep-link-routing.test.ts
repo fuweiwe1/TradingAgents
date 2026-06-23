@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { handleDeepLink } from '../deep-link'
+import { handleDeepLink, parseDeepLink } from '../deep-link'
 import { RPC_CHANNELS } from '../../shared/types'
 import type { EventSink } from '@craft-agent/server-core/transport'
 import type { WindowManager } from '../window-manager'
@@ -20,6 +20,17 @@ function createMockWindow(webContentsId: number) {
 }
 
 describe('handleDeepLink routing', () => {
+  it('parses the active development instance scheme', () => {
+    expect(
+      parseDeepLink(
+        'stockcraft-dev://settings/preferences',
+        'stockcraft-dev',
+      ),
+    ).toMatchObject({
+      view: 'settings/preferences',
+    })
+  })
+
   it('prefers resolved target client over preferred caller client', async () => {
     const targetWindow = createMockWindow(22)
 

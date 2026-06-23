@@ -69,6 +69,7 @@ Sentry.init({
 // the system prompt's "Preferred language" line, and the native menu.
 import { setupI18n, i18n, SUPPORTED_LANGUAGE_CODES, type LanguageCode } from '@craft-agent/shared/i18n'
 import { getPersistedUiLanguage, setPersistedUiLanguage } from '@craft-agent/shared/config'
+import { INSTANCE_CONFIG } from '@craft-agent/shared/config/instance'
 setupI18n()
 const persistedUiLanguage = getPersistedUiLanguage()
 if (persistedUiLanguage) {
@@ -213,7 +214,7 @@ registerPiModelResolver((piAuthProvider) =>
 
 // Custom URL scheme for deeplinks (e.g., craftagents://auth-complete)
 // Supports multi-instance dev: CRAFT_DEEPLINK_SCHEME env var (craftagents1, craftagents2, etc.)
-const DEEPLINK_SCHEME = process.env.CRAFT_DEEPLINK_SCHEME || 'craftagents'
+const DEEPLINK_SCHEME = INSTANCE_CONFIG.deeplinkScheme
 
 let windowManager: WindowManager | null = null
 let sessionManager: SessionManager | null = null
@@ -1112,7 +1113,7 @@ app.whenReady().then(async () => {
     // before-quit firing; saving from before-quit alone would overwrite
     // window-state.json with an empty array.
     setBeforeUpdateQuitHook(() => captureAndSaveWindowState('pre-update'))
-    if (app.isPackaged) {
+    if (app.isPackaged && !process.env.CRAFT_DEV_RUNTIME) {
       checkForUpdatesOnLaunch().catch(err => {
         mainLog.error('[auto-update] Launch check failed:', err)
       })

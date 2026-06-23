@@ -1,4 +1,5 @@
 import { RPC_CHANNELS } from '@craft-agent/shared/protocol'
+import { INSTANCE_CONFIG } from '@craft-agent/shared/config/instance'
 import type { RpcServer } from '@craft-agent/server-core/transport'
 import type { HandlerDeps } from './handler-deps'
 
@@ -102,7 +103,8 @@ export function registerWorkspaceGuiHandlers(server: RpcServer, deps: HandlerDep
   // Open a session in a new window
   server.handle(RPC_CHANNELS.window.OPEN_SESSION_IN_NEW_WINDOW, async (_ctx, workspaceId: string, sessionId: string) => {
     if (!windowManager) return
-    const deepLink = `craftagents://allSessions/session/${sessionId}`
+    const deepLink =
+      `${INSTANCE_CONFIG.deeplinkScheme}://allSessions/session/${sessionId}`
     windowManager.createWindow({
       workspaceId,
       focused: true,

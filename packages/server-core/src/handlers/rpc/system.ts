@@ -4,7 +4,12 @@ import { homedir } from 'os'
 import { execSync } from 'child_process'
 import { RPC_CHANNELS } from '@craft-agent/shared/protocol'
 import { getWorkspaceByNameOrId, getGitBashPath, setGitBashPath, clearGitBashPath } from '@craft-agent/shared/config'
-import { classifyExternalUrl, formatBlockedUrlError } from '@craft-agent/shared/utils/url-safety'
+import { INSTANCE_CONFIG } from '@craft-agent/shared/config/instance'
+import {
+  classifyExternalUrl,
+  formatBlockedUrlError,
+  normalizeInternalDeeplinkUrl,
+} from '@craft-agent/shared/utils/url-safety'
 import { isUsableGitBashPath, validateGitBashPath } from '@craft-agent/server-core/services'
 import { validateFilePath, getWorkspaceAllowedDirs } from '@craft-agent/server-core/handlers'
 import type { RpcServer } from '@craft-agent/server-core/transport'
@@ -68,7 +73,7 @@ function collectDeepLinkParams(parsed: URL, pathId?: string): Record<string, str
 }
 
 function parseInternalCraftAgentsDeepLink(parsed: URL): ParsedInternalDeepLink | null {
-  if (parsed.protocol !== 'craftagents:') return null
+  if (parsed.protocol !== `${INSTANCE_CONFIG.deeplinkScheme}:`) return null
 
   const host = parsed.hostname
   const pathParts = parsed.pathname.split('/').filter(Boolean)
@@ -281,12 +286,19 @@ export function registerSystemCoreHandlers(server: RpcServer, deps: HandlerDeps)
   server.handle(RPC_CHANNELS.shell.OPEN_URL, async (ctx, url: string) => {
     deps.platform.logger.info('[OPEN_URL] Received request:', url)
     try {
-      const classification = classifyExternalUrl(url)
+      const normalizedUrl = normalizeInternalDeeplinkUrl(
+        url,
+        INSTANCE_CONFIG.deeplinkScheme,
+      )
+      const classification = classifyExternalUrl(
+        normalizedUrl,
+        INSTANCE_CONFIG.deeplinkScheme,
+      )
       if (classification.kind === 'dangerous') {
         throw new Error(formatBlockedUrlError(classification))
       }
 
-      const parsed = new URL(url)
+      const parsed = new URL(normalizedUrl)
 
       if (classification.kind === 'internal-deeplink') {
         const deepLink = parseInternalCraftAgentsDeepLink(parsed)
@@ -309,7 +321,11 @@ export function registerSystemCoreHandlers(server: RpcServer, deps: HandlerDeps)
         // For links requiring window management (e.g. window=focused/full), or
         // unknown deep-link shapes, fall back to the client protocol handler.
         deps.platform.logger.info('[OPEN_URL] Falling back to client openExternal for craftagents:// URL')
-        const deepLinkResult = await requestClientOpenExternal(server, ctx.clientId, url)
+        const deepLinkResult = await requestClientOpenExternal(
+          server,
+          ctx.clientId,
+          normalizedUrl,
+        )
         if (!deepLinkResult.opened) {
           deps.platform.logger.error(`[OPEN_URL] Client capability failed: ${deepLinkResult.error}`)
           throw new Error(`Cannot open URL on client: ${deepLinkResult.error}`)
@@ -317,7 +333,11 @@ export function registerSystemCoreHandlers(server: RpcServer, deps: HandlerDeps)
         return
       }
 
-      const result = await requestClientOpenExternal(server, ctx.clientId, url)
+      const result = await requestClientOpenExternal(
+        server,
+        ctx.clientId,
+        normalizedUrl,
+      )
       if (!result.opened) {
         deps.platform.logger.error(`[OPEN_URL] Client capability failed: ${result.error}`)
         throw new Error(`Cannot open URL on client: ${result.error}`)
