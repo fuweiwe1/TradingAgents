@@ -43,6 +43,7 @@
     "validate:ci": "bun run validate:dev && bun run lint:i18n:parity && bun run lint:i18n:sorted && bun run lint:i18n:coverage",
     "lint:ipc-sends": "bash scripts/check-raw-sends.sh",
     "lint:tool-name-checks": "bash scripts/check-task-tool-checks.sh",
+    "lint:instance-paths": "bun run scripts/check-instance-paths.ts",
     "lint:electron": "cd apps/electron && bun run lint",
     "lint:shared": "cd packages/shared && npx eslint .",
     "lint:ui": "cd packages/ui && npx eslint .",
