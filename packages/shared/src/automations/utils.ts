@@ -10,6 +10,7 @@ import type { AutomationEvent, AutomationMatcher, PromptReferences, AgentEvent, 
 import { matchesCron } from './cron-matcher.ts';
 import { sanitizeForShell } from './security.ts';
 import { evaluateConditions } from './conditions.ts';
+import { getInstanceEnvironment } from '../config/instance-env.ts';
 
 // ============================================================================
 // String Utilities
@@ -266,7 +267,11 @@ function buildBaseEventEnv(event: AutomationEvent, payload: BaseEventPayload): R
  */
 export function buildEnvFromPayload(event: AutomationEvent, payload: BaseEventPayload): Record<string, string> {
   const base = buildBaseEventEnv(event, payload);
-  const env: Record<string, string> = { ...cleanEnv(), ...base };
+  const env: Record<string, string> = {
+    ...cleanEnv(),
+    ...base,
+    ...getInstanceEnvironment(),
+  };
 
   // Sanitize session name for shell context
   if (payload.sessionName) env.CRAFT_SESSION_NAME = sanitizeForShell(payload.sessionName);

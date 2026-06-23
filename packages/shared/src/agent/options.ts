@@ -4,6 +4,7 @@ import { homedir } from "os";
 import { existsSync, readFileSync, writeFileSync, unlinkSync, readdirSync } from "fs";
 import { debug } from "../utils/debug";
 import { getProxyEnvVars } from "../config/proxy-env.ts";
+import { getInstanceEnvironment } from "../config/instance-env.ts";
 
 declare const CRAFT_AGENT_CLI_VERSION: string | undefined;
 
@@ -189,6 +190,7 @@ export function buildClaudeSubprocessEnv(
         ...process.env,
         ...getProxyEnvVars(),
         ...envOverrides,
+        ...getInstanceEnvironment(),
         // Propagate debug mode from argv flag OR existing env var
         CRAFT_DEBUG: (process.argv.includes('--debug') || process.env.CRAFT_DEBUG === '1') ? '1' : '0',
     };

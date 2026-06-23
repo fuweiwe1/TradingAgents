@@ -10,6 +10,7 @@ import { CraftMcpClient } from './client.js';
 import { debug } from '../utils/debug.ts';
 import { normalizeMcpUrl } from '../sources/server-builder.ts';
 import type { McpTransport } from '../sources/types.ts';
+import { getInstanceEnvironment } from '../config/instance-env.ts';
 
 export interface InvalidProperty {
   toolName: string;
@@ -390,7 +391,11 @@ export async function validateStdioMcpConnection(
     transport = new StdioClientTransport({
       command,
       args,
-      env: { ...processEnv, ...env },
+      env: {
+        ...processEnv,
+        ...env,
+        ...getInstanceEnvironment(),
+      },
       stderr: 'pipe',
     });
 

@@ -8,6 +8,7 @@ import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import type { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
+import { getInstanceEnvironment } from '../config/instance-env.ts';
 
 /**
  * HTTP transport config for remote MCP servers
@@ -93,7 +94,11 @@ export class CraftMcpClient {
       this.transport = new StdioClientTransport({
         command: config.command,
         args: config.args,
-        env: { ...processEnv, ...config.env },
+        env: {
+          ...processEnv,
+          ...config.env,
+          ...getInstanceEnvironment(),
+        },
       });
     } else {
       // HTTP transport for remote MCP servers

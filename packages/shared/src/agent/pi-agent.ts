@@ -18,6 +18,7 @@ import { createInterface, type Interface as ReadlineInterface } from 'node:readl
 import type { AgentEvent } from '@craft-agent/core/types';
 import type { FileAttachment } from '../utils/files.ts';
 import { getProxyEnvVars } from '../config/proxy-env.ts';
+import { getInstanceEnvironment } from '../config/instance-env.ts';
 
 import type {
   BackendConfig,
@@ -456,6 +457,7 @@ export class PiAgent extends BaseAgent {
         ...getProxyEnvVars(),
         ...this.config.envOverrides,
         ...awsEnv,
+        ...getInstanceEnvironment(),
         // Pass session dir for cross-process toolMetadataStore
         ...(sessionDir ? { CRAFT_SESSION_DIR: sessionDir } : {}),
         // Propagate debug mode

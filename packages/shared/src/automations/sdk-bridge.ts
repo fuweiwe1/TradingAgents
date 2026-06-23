@@ -7,6 +7,7 @@
 import { sanitizeForShell } from './security.ts';
 import { cleanEnv } from './utils.ts';
 import type { AgentEvent, SdkAutomationInput } from './types.ts';
+import { getInstanceEnvironment } from '../config/instance-env.ts';
 
 /**
  * Build environment variables from SDK automation input.
@@ -15,6 +16,7 @@ import type { AgentEvent, SdkAutomationInput } from './types.ts';
 export function buildEnvFromSdkInput(event: AgentEvent, input: SdkAutomationInput): Record<string, string> {
   const env: Record<string, string> = {
     ...cleanEnv(),
+    ...getInstanceEnvironment(),
     CRAFT_EVENT: event,
   };
 
