@@ -4,7 +4,7 @@
  * Provides access to built-in documentation that Claude can reference
  * when performing configuration tasks (sources, agents, permissions, etc.).
  *
- * Docs are stored at ~/.craft-agent/docs/ and synced from bundled assets.
+ * Docs are stored under the active instance's config directory and synced from bundled assets.
  * Source content lives in apps/electron/resources/docs/*.md for easier editing.
  */
 
@@ -89,38 +89,34 @@ export function getDocPath(filename: string): string {
   return join(DOCS_DIR, filename);
 }
 
-// App root path reference for prompt/display text only.
-// IMPORTANT: This is intentionally a human-readable, non-instance-aware path.
-// Do NOT use APP_ROOT for real filesystem reads/writes.
-// For runtime filesystem paths, use CONFIG_DIR from config/paths.ts.
-export const APP_ROOT = '~/.craft-agent';
+// App root path reference used by prompts and tool descriptions.
+export const APP_ROOT = CONFIG_DIR;
 
 /**
  * Documentation file references for use in error messages and tool descriptions.
  * Use these constants instead of hardcoding paths to keep references in sync.
  */
 export const DOC_REFS = {
-  appRoot: APP_ROOT,
-  sources: `${APP_ROOT}/docs/sources.md`,
-  permissions: `${APP_ROOT}/docs/permissions.md`,
-  skills: `${APP_ROOT}/docs/skills.md`,
-  themes: `${APP_ROOT}/docs/themes.md`,
-  statuses: `${APP_ROOT}/docs/statuses.md`,
-  labels: `${APP_ROOT}/docs/labels.md`,
-  toolIcons: `${APP_ROOT}/docs/tool-icons.md`,
-  automations: `${APP_ROOT}/docs/automations.md`,
-  hooks: `${APP_ROOT}/docs/automations.md`,
-  tasks: `${APP_ROOT}/docs/automations.md`,
-  mermaid: `${APP_ROOT}/docs/mermaid.md`,
-  dataTables: `${APP_ROOT}/docs/data-tables.md`,
-  htmlPreview: `${APP_ROOT}/docs/html-preview.md`,
-  pdfPreview: `${APP_ROOT}/docs/pdf-preview.md`,
-  imagePreview: `${APP_ROOT}/docs/image-preview.md`,
-  markdownPreview: `${APP_ROOT}/docs/markdown-preview.md`,
-  llmTool: `${APP_ROOT}/docs/llm-tool.md`,
-  browserTools: `${APP_ROOT}/docs/browser-tools.md`,
-  craftCli: `${APP_ROOT}/docs/craft-cli.md`,
-  docsDir: `${APP_ROOT}/docs/`,
+  sources: join(DOCS_DIR, 'sources.md'),
+  permissions: join(DOCS_DIR, 'permissions.md'),
+  skills: join(DOCS_DIR, 'skills.md'),
+  themes: join(DOCS_DIR, 'themes.md'),
+  statuses: join(DOCS_DIR, 'statuses.md'),
+  labels: join(DOCS_DIR, 'labels.md'),
+  toolIcons: join(DOCS_DIR, 'tool-icons.md'),
+  automations: join(DOCS_DIR, 'automations.md'),
+  hooks: join(DOCS_DIR, 'automations.md'),
+  tasks: join(DOCS_DIR, 'automations.md'),
+  mermaid: join(DOCS_DIR, 'mermaid.md'),
+  dataTables: join(DOCS_DIR, 'data-tables.md'),
+  htmlPreview: join(DOCS_DIR, 'html-preview.md'),
+  pdfPreview: join(DOCS_DIR, 'pdf-preview.md'),
+  imagePreview: join(DOCS_DIR, 'image-preview.md'),
+  markdownPreview: join(DOCS_DIR, 'markdown-preview.md'),
+  llmTool: join(DOCS_DIR, 'llm-tool.md'),
+  browserTools: join(DOCS_DIR, 'browser-tools.md'),
+  craftCli: join(DOCS_DIR, 'craft-cli.md'),
+  docsDir: DOCS_DIR,
 } as const;
 
 /**

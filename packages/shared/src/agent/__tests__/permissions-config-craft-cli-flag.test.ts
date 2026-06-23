@@ -1,11 +1,10 @@
-import { describe, it, expect, beforeEach, afterEach } from 'bun:test'
+import { describe, it, expect } from 'bun:test'
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
-import { permissionsConfigCache } from '../permissions-config.ts'
+import { pathToFileURL } from 'node:url'
 
-const originalConfigDir = process.env.CRAFT_CONFIG_DIR
-const originalCliFlag = process.env.CRAFT_FEATURE_CRAFT_AGENTS_CLI
+const permissionsConfigUrl = pathToFileURL(join(import.meta.dir, '..', 'permissions-config.ts')).href
 
 function writeDefaultPermissions(configDir: string) {
   const permissionsDir = join(configDir, 'permissions')
@@ -30,34 +29,42 @@ function writeDefaultPermissions(configDir: string) {
   )
 }
 
-beforeEach(() => {
-  permissionsConfigCache.clear()
-})
+function getCompiledSources(configDir: string, cliFlag: '0' | '1'): string[] {
+  const result = Bun.spawnSync(
+    [
+      process.execPath,
+      '--eval',
+      `
+        const { permissionsConfigCache } = await import('${permissionsConfigUrl}');
+        const merged = permissionsConfigCache.getMergedConfig({
+          workspaceRootPath: ${JSON.stringify(join(configDir, 'workspace'))},
+          activeSourceSlugs: [],
+        });
+        console.log(JSON.stringify(merged.readOnlyBashPatterns.map(pattern => pattern.source)));
+      `,
+    ],
+    {
+      env: {
+        ...process.env,
+        CRAFT_CONFIG_DIR: configDir,
+        CRAFT_FEATURE_CRAFT_AGENTS_CLI: cliFlag,
+      },
+      stdout: 'pipe',
+      stderr: 'pipe',
+    },
+  )
 
-afterEach(() => {
-  permissionsConfigCache.clear()
-
-  if (originalConfigDir === undefined) delete process.env.CRAFT_CONFIG_DIR
-  else process.env.CRAFT_CONFIG_DIR = originalConfigDir
-
-  if (originalCliFlag === undefined) delete process.env.CRAFT_FEATURE_CRAFT_AGENTS_CLI
-  else process.env.CRAFT_FEATURE_CRAFT_AGENTS_CLI = originalCliFlag
-})
+  expect(result.exitCode, result.stderr.toString()).toBe(0)
+  return JSON.parse(result.stdout.toString())
+}
 
 describe('permissions config craft-agents-cli feature flag', () => {
   it('skips compiling craft-agent bash allowlist patterns when feature is disabled', () => {
     const tempConfigDir = mkdtempSync(join(tmpdir(), 'craft-permissions-'))
     try {
-      process.env.CRAFT_CONFIG_DIR = tempConfigDir
-      process.env.CRAFT_FEATURE_CRAFT_AGENTS_CLI = '0'
       writeDefaultPermissions(tempConfigDir)
 
-      const merged = permissionsConfigCache.getMergedConfig({
-        workspaceRootPath: '/tmp/workspace',
-        activeSourceSlugs: [],
-      })
-
-      const sources = merged.readOnlyBashPatterns.map(p => p.source)
+      const sources = getCompiledSources(tempConfigDir, '0')
       expect(sources.some(source => source.startsWith('^craft-agent\\s'))).toBe(false)
       expect(sources).toContain('^rg\\b')
     } finally {
@@ -68,16 +75,9 @@ describe('permissions config craft-agents-cli feature flag', () => {
   it('compiles craft-agent bash allowlist patterns when feature is enabled', () => {
     const tempConfigDir = mkdtempSync(join(tmpdir(), 'craft-permissions-'))
     try {
-      process.env.CRAFT_CONFIG_DIR = tempConfigDir
-      process.env.CRAFT_FEATURE_CRAFT_AGENTS_CLI = '1'
       writeDefaultPermissions(tempConfigDir)
 
-      const merged = permissionsConfigCache.getMergedConfig({
-        workspaceRootPath: '/tmp/workspace',
-        activeSourceSlugs: [],
-      })
-
-      const sources = merged.readOnlyBashPatterns.map(p => p.source)
+      const sources = getCompiledSources(tempConfigDir, '1')
       expect(sources).toContain('^craft-agent\\s+label\\s+list\\b')
       expect(sources).toContain('^rg\\b')
     } finally {

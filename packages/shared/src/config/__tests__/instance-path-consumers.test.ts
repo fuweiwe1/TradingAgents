@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'bun:test';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { isAbsolute, join, relative } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 const sharedSrcDir = join(import.meta.dir, '..', '..');
@@ -31,7 +31,9 @@ describe('shared instance path consumers', () => {
 
             console.log(JSON.stringify({
               workspaceDir: workspaces.getDefaultWorkspacesDir(),
+              appRoot: docs.APP_ROOT,
               docsDir: docs.DOCS_DIR,
+              docRefs: docs.DOC_REFS,
               releaseNotesDir: releaseNotes.RELEASE_NOTES_DIR,
               credentialsFile: credentials.CREDENTIALS_FILE,
               interceptorConfigFile: interceptor.CONFIG_FILE,
@@ -56,9 +58,35 @@ describe('shared instance path consumers', () => {
       );
 
       expect(result.exitCode, result.stderr.toString()).toBe(0);
-      expect(JSON.parse(result.stdout.toString())).toEqual({
+      const paths = JSON.parse(result.stdout.toString());
+      const expectedDocsDir = join(configDir, 'docs');
+
+      expect(paths).toEqual({
         workspaceDir: join(configDir, 'workspaces'),
-        docsDir: join(configDir, 'docs'),
+        appRoot: configDir,
+        docsDir: expectedDocsDir,
+        docRefs: {
+          sources: join(expectedDocsDir, 'sources.md'),
+          permissions: join(expectedDocsDir, 'permissions.md'),
+          skills: join(expectedDocsDir, 'skills.md'),
+          themes: join(expectedDocsDir, 'themes.md'),
+          statuses: join(expectedDocsDir, 'statuses.md'),
+          labels: join(expectedDocsDir, 'labels.md'),
+          toolIcons: join(expectedDocsDir, 'tool-icons.md'),
+          automations: join(expectedDocsDir, 'automations.md'),
+          hooks: join(expectedDocsDir, 'automations.md'),
+          tasks: join(expectedDocsDir, 'automations.md'),
+          mermaid: join(expectedDocsDir, 'mermaid.md'),
+          dataTables: join(expectedDocsDir, 'data-tables.md'),
+          htmlPreview: join(expectedDocsDir, 'html-preview.md'),
+          pdfPreview: join(expectedDocsDir, 'pdf-preview.md'),
+          imagePreview: join(expectedDocsDir, 'image-preview.md'),
+          markdownPreview: join(expectedDocsDir, 'markdown-preview.md'),
+          llmTool: join(expectedDocsDir, 'llm-tool.md'),
+          browserTools: join(expectedDocsDir, 'browser-tools.md'),
+          craftCli: join(expectedDocsDir, 'craft-cli.md'),
+          docsDir: expectedDocsDir,
+        },
         releaseNotesDir: join(configDir, 'release-notes'),
         credentialsFile: join(configDir, 'credentials.enc'),
         interceptorConfigFile: join(configDir, 'config.json'),
@@ -69,6 +97,13 @@ describe('shared instance path consumers', () => {
         permissionsDir: join(configDir, 'permissions'),
         permissionsDefaultPath: join(configDir, 'permissions', 'default.json'),
       });
+
+      for (const docRef of Object.values(paths.docRefs) as string[]) {
+        const relativePath = relative(expectedDocsDir, docRef);
+        expect(isAbsolute(relativePath)).toBe(false);
+        expect(relativePath.startsWith('..')).toBe(false);
+      }
+      expect(paths.docRefs.browserTools).toBe(paths.browserToolsDocPath);
     } finally {
       rmSync(configDir, { recursive: true, force: true });
     }
