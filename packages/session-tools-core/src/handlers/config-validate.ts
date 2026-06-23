@@ -5,11 +5,18 @@
  * Uses full validators if available (Claude), otherwise basic validation (Codex).
  */
 
+import { homedir } from 'node:os';
 import { join } from 'node:path';
-import { CONFIG_DIR } from '@craft-agent/shared/config/paths';
 
 const AUTOMATIONS_CONFIG_FILE = 'automations.json';
-export const SESSION_TOOLS_CONFIG_ROOT = CONFIG_DIR;
+export function resolveSessionToolsConfigRoot(
+  env: Readonly<Record<string, string | undefined>> = process.env,
+  homeDir: string = homedir(),
+): string {
+  return env.CRAFT_CONFIG_DIR || join(homeDir, '.craft-agent');
+}
+
+export const SESSION_TOOLS_CONFIG_ROOT = resolveSessionToolsConfigRoot();
 import type { SessionToolContext } from '../context.ts';
 import type { ToolResult } from '../types.ts';
 import { successResponse, errorResponse } from '../response.ts';
