@@ -26,7 +26,6 @@
  */
 
 import { join } from 'node:path'
-import { homedir } from 'node:os'
 import { readFileSync, existsSync } from 'node:fs'
 import { version as packageVersion } from '../package.json'
 import { enableDebug } from '@craft-agent/shared/utils/debug'
@@ -35,6 +34,10 @@ import {
   StockResearchPersistenceCoordinator,
 } from '@craft-agent/server-core/stock'
 import { StockStorageService } from '@craft-agent/server-core/stock/bun'
+import {
+  STOCK_DATABASE_PATH,
+  getWorkspaceMessagingDir,
+} from '@craft-agent/server-core/runtime-paths'
 import { validateSession, createWebuiHandler, nodeHttpAdapter } from '@craft-agent/server-core/webui'
 import type { WebuiHandler } from '@craft-agent/server-core/webui'
 import { getCredentialManager } from '@craft-agent/shared/credentials'
@@ -170,7 +173,7 @@ let stockStorage: StockStorageService | null = null
 
 function getStockStorage(): StockStorageService {
   stockStorage ??= new StockStorageService({
-    databasePath: join(homedir(), '.craft-agent', 'stockcraft.sqlite'),
+    databasePath: STOCK_DATABASE_PATH,
   })
   return stockStorage
 }
@@ -223,7 +226,7 @@ const instance = await (async () => {
           sessionManager,
           credentialManager: getCredentialManager(),
           getMessagingDir: (wsId: string) =>
-            join(homedir(), '.craft-agent', 'workspaces', wsId, 'messaging'),
+            getWorkspaceMessagingDir(wsId),
           // Headless has no legacy messaging dir — workspaces start clean.
           whatsapp: {
             workerEntry: waWorkerEntry,

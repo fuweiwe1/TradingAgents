@@ -1,8 +1,8 @@
 import { writeFileSync, existsSync, mkdirSync } from 'fs'
 import { readJsonFileSync } from '@craft-agent/shared/utils/files'
+import { WINDOW_STATE_PATH } from '@craft-agent/server-core/runtime-paths'
 import { mainLog } from './logger'
-import { join } from 'path'
-import { homedir } from 'os'
+import { dirname } from 'path'
 
 export interface WindowBounds {
   x: number
@@ -29,8 +29,7 @@ export interface WindowState {
   lastFocusedWorkspaceId?: string
 }
 
-const CONFIG_DIR = join(homedir(), '.craft-agent')
-const WINDOW_STATE_FILE = join(CONFIG_DIR, 'window-state.json')
+export const windowStatePath = WINDOW_STATE_PATH
 
 /**
  * Save the current window state (windows with bounds and type)
@@ -38,11 +37,12 @@ const WINDOW_STATE_FILE = join(CONFIG_DIR, 'window-state.json')
 export function saveWindowState(state: WindowState): void {
   try {
     // Ensure config directory exists
-    if (!existsSync(CONFIG_DIR)) {
-      mkdirSync(CONFIG_DIR, { recursive: true })
+    const configDir = dirname(windowStatePath)
+    if (!existsSync(configDir)) {
+      mkdirSync(configDir, { recursive: true })
     }
 
-    writeFileSync(WINDOW_STATE_FILE, JSON.stringify(state, null, 2), 'utf-8')
+    writeFileSync(windowStatePath, JSON.stringify(state, null, 2), 'utf-8')
     mainLog.info('[WindowState] Saved window state:', state.windows.length, 'windows')
   } catch (error) {
     mainLog.error('[WindowState] Failed to save window state:', error)
@@ -54,11 +54,11 @@ export function saveWindowState(state: WindowState): void {
  */
 export function loadWindowState(): WindowState | null {
   try {
-    if (!existsSync(WINDOW_STATE_FILE)) {
+    if (!existsSync(windowStatePath)) {
       return null
     }
 
-    const raw = readJsonFileSync(WINDOW_STATE_FILE)
+    const raw = readJsonFileSync(windowStatePath)
 
     // Validate format
     const state = raw as WindowState
@@ -80,8 +80,8 @@ export function loadWindowState(): WindowState | null {
  */
 export function clearWindowState(): void {
   try {
-    if (existsSync(WINDOW_STATE_FILE)) {
-      writeFileSync(WINDOW_STATE_FILE, JSON.stringify({ windows: [] }, null, 2), 'utf-8')
+    if (existsSync(windowStatePath)) {
+      writeFileSync(windowStatePath, JSON.stringify({ windows: [] }, null, 2), 'utf-8')
       mainLog.info('[WindowState] Cleared window state')
     }
   } catch (error) {

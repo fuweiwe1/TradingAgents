@@ -1,8 +1,8 @@
 import { createHash } from 'node:crypto'
 import { appendFile, mkdir } from 'node:fs/promises'
-import { dirname, join } from 'node:path'
-import { homedir } from 'node:os'
+import { dirname } from 'node:path'
 import type { Logger } from '../runtime/platform'
+import { PRIVILEGED_AUDIT_LOG_PATH } from '../runtime-paths'
 
 export interface PrivilegedExecutionRequest {
   requestId: string
@@ -22,7 +22,6 @@ interface PendingPrivilegedRequest extends PrivilegedExecutionRequest {
 }
 
 const DEFAULT_APPROVAL_TTL_SECONDS = 120
-const AUDIT_LOG_PATH = join(homedir(), '.craft-agent', 'logs', 'privileged-actions.jsonl')
 
 /**
  * PrivilegedExecutionBroker
@@ -177,8 +176,8 @@ export class PrivilegedExecutionBroker {
 
   private async appendAudit(payload: Record<string, unknown>): Promise<void> {
     try {
-      await mkdir(dirname(AUDIT_LOG_PATH), { recursive: true })
-      await appendFile(AUDIT_LOG_PATH, `${JSON.stringify({ timestamp: new Date().toISOString(), ...payload })}\n`, 'utf8')
+      await mkdir(dirname(PRIVILEGED_AUDIT_LOG_PATH), { recursive: true })
+      await appendFile(PRIVILEGED_AUDIT_LOG_PATH, `${JSON.stringify({ timestamp: new Date().toISOString(), ...payload })}\n`, 'utf8')
     } catch (error) {
       this.logger.warn('[PrivilegedExecutionBroker] Failed to write audit log:', error)
     }

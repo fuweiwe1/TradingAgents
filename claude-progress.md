@@ -941,3 +941,29 @@
 - Known risk/blocker:
   - Permissions tests that need different `CRAFT_CONFIG_DIR` values must load the module in separate subprocesses.
   - On this Windows machine, use `init.ps1`; the WSL `/bin/bash` path remains unavailable.
+
+### Session 038
+
+- Date: 2026-06-23
+- Goal: Implement infra-002 Task 5, routing Electron and server runtime storage through the centralized instance config directory.
+- Completed:
+  - Added `packages/server-core/src/runtime-paths.ts`, a side-effect-free set of production path constants and a workspace messaging path builder derived from `@craft-agent/shared/config/paths`.
+  - Routed Electron and headless StockCraft SQLite to `CONFIG_DIR/stockcraft.sqlite`.
+  - Routed Electron window state, dedicated messaging logs, Electron/headless workspace messaging, privileged audit logs, auth config deletion, and default workspace slug checks through the centralized paths.
+  - Routed session-tools fallback config, preferences, and tool-icon validation through the shared `CONFIG_DIR`.
+  - Added `apps/electron/src/main/__tests__/instance-storage-paths.test.ts`, which sets `CRAFT_CONFIG_DIR` before import in a subprocess and verifies the actual exported production paths.
+- TDD record:
+  - RED: `bun test apps/electron/src/main/__tests__/instance-storage-paths.test.ts` failed because `packages/server-core/src/runtime-paths.ts` did not exist.
+  - GREEN: the same command passed with 1 test and 0 failures after the minimal centralized path implementation.
+- Verification:
+  - Focused Task 5 suite passed: 19 tests, 0 failures across runtime paths, stock storage, stock research RPC, and session-tools config validation.
+  - `registration.test.ts` passed independently with 2 tests and 0 failures.
+  - `registration-profiles.test.ts` passed independently with 2 tests and 0 failures.
+  - shared, server-core, headless server, session-tools-core, and Electron typechecks passed.
+  - The registration tests reproduced their known cold parallel timeout/shared mock-state false negative, then passed in separate processes without code changes.
+- Current progress:
+  - `infra-002` remains `in_progress`; Tasks 1-5 are complete and Task 6 is next.
+  - Current branch: `codex/infra-002-instance-isolation-impl`.
+- Known risk/blocker:
+  - Registration coverage files should continue to run in separate Bun processes when the environment is cold or concurrent typechecks are active.
+  - On this Windows machine, use `init.ps1`; the WSL `/bin/bash` path remains unavailable.

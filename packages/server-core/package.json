@@ -18,6 +18,7 @@
     "./stock/bun": "./src/stock/stock-storage-bun.ts",
     "./stock/node": "./src/stock/stock-storage-node.ts",
     "./services": "./src/services/index.ts",
+    "./runtime-paths": "./src/runtime-paths.ts",
     "./handlers/rpc": "./src/handlers/rpc/index.ts",
     "./handlers/rpc/*": "./src/handlers/rpc/*.ts",
     "./sessions": "./src/sessions/index.ts",
