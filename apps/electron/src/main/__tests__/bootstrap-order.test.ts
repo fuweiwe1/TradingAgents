@@ -108,6 +108,10 @@ test('bootstrap dynamically loads config and main without a NODE_ENV guard', asy
 
   expect(bootstrapSource).not.toContain('NODE_ENV')
   expect(bootstrapSource).not.toContain('INSTANCE_CONFIG } from')
+  expect(bootstrapSource).toContain('applyInstanceEnvironmentFromArgs')
+  expect(bootstrapSource.indexOf('applyInstanceEnvironmentFromArgs()')).toBeLessThan(
+    bootstrapSource.indexOf('void runElectronBootstrap'),
+  )
   expect(bootstrapSource).toContain(
     "import('@craft-agent/shared/config/instance')",
   )

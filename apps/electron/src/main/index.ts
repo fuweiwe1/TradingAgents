@@ -70,6 +70,7 @@ Sentry.init({
 import { setupI18n, i18n, SUPPORTED_LANGUAGE_CODES, type LanguageCode } from '@craft-agent/shared/i18n'
 import { getPersistedUiLanguage, setPersistedUiLanguage } from '@craft-agent/shared/config'
 import { INSTANCE_CONFIG } from '@craft-agent/shared/config/instance'
+import { getDevelopmentProtocolClientArgs } from './protocol-registration'
 setupI18n()
 const persistedUiLanguage = getPersistedUiLanguage()
 if (persistedUiLanguage) {
@@ -245,8 +246,17 @@ let pendingDeepLink: string | null = null
 // This must be done before app.whenReady() on some platforms
 if (process.defaultApp) {
   // Development mode: need to pass the app path
-  if (process.argv.length >= 2) {
-    app.setAsDefaultProtocolClient(DEEPLINK_SCHEME, process.execPath, [process.argv[1]])
+  const protocolClientArgs = getDevelopmentProtocolClientArgs(
+    process.argv,
+    undefined,
+    INSTANCE_CONFIG,
+  )
+  if (protocolClientArgs) {
+    app.setAsDefaultProtocolClient(
+      DEEPLINK_SCHEME,
+      process.execPath,
+      protocolClientArgs,
+    )
   }
 } else {
   // Production mode
@@ -392,7 +402,8 @@ async function createInitialWindows(): Promise<void> {
   mainLog.info(`Created window for first workspace: ${workspaces[0].name}`)
 }
 
-app.whenReady().then(async () => {
+if (gotTheLock) {
+  app.whenReady().then(async () => {
   // Export packaged state as env var so logger.ts (and headless Bun) don't need 'electron'
   process.env.CRAFT_IS_PACKAGED = app.isPackaged ? 'true' : 'false'
 
@@ -1155,7 +1166,8 @@ app.whenReady().then(async () => {
       }
     }
   })
-})
+  })
+}
 
 app.on('window-all-closed', () => {
   if (process.env.CRAFT_HEADLESS) return  // headless server stays alive
