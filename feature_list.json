@@ -1,6 +1,6 @@
 {
   "project": "StockCraft",
-  "last_updated": "2026-06-22",
+  "last_updated": "2026-06-24",
   "rules": {
     "single_active_feature": true,
     "passing_requires_evidence": true,
@@ -244,7 +244,7 @@
       "area": "infrastructure",
       "title": "隔离 StockCraft Dev 与 Craft Agents 原版实例",
       "user_visible_behavior": "用户可以同时运行已安装的 Craft Agents 原版和本仓库 StockCraft Dev；两者的配置、会话、凭据、SQLite、缓存、锁、日志和 Deep Link 完全互不影响。",
-      "status": "in_progress",
+      "status": "passing",
       "verification": [
         "开发版默认使用 ~/.stockcraft-dev，原版继续使用 ~/.craft-agent。",
         "开发版与原版使用不同 Electron userData 和单实例锁。",
@@ -260,9 +260,14 @@
         "2026-06-21: 用户批准设计；已创建 docs/superpowers/plans/2026-06-21-infra-002-instance-isolation.md，将实现拆为统一实例配置、开发启动默认值、Electron 早期 bootstrap、共享/服务路径迁移、子进程继承、硬编码守卫、开发包身份和双实例验收九个 TDD 任务。",
         "2026-06-22: Task 3 complete: Electron main now enters through bootstrap.ts, which sets app name and isolated userData before dynamically loading index.ts. The focused bootstrap-order test passed with production null-userData coverage; Electron typecheck, apps/electron build:main:win, and root electron:build:main passed. All active main-process build/watch entries now reference bootstrap.ts.",
         "2026-06-22: Task 4 complete: shared workspace, docs, release notes, credentials, interceptor, logo cache, browser prerequisite, and permissions paths now derive from centralized CONFIG_DIR. The subprocess regression test passed against a temporary CRAFT_CONFIG_DIR; focused config/interceptor tests and shared typecheck passed.",
-        "2026-06-23: Task 5 complete: Electron and headless StockCraft SQLite, window state, messaging logs and workspace messaging, privileged audit logs, auth config, default workspaces, and session-tools config validation now derive from centralized CONFIG_DIR. The subprocess runtime-path test passed against a temporary CRAFT_CONFIG_DIR; stock storage/RPC tests, auth/workspace registration coverage, and shared/server-core/server/session-tools/electron typechecks passed."
+        "2026-06-23: Task 5 complete: Electron and headless StockCraft SQLite, window state, messaging logs and workspace messaging, privileged audit logs, auth config, default workspaces, and session-tools config validation now derive from centralized CONFIG_DIR. The subprocess runtime-path test passed against a temporary CRAFT_CONFIG_DIR; stock storage/RPC tests, auth/workspace registration coverage, and shared/server-core/server/session-tools/electron typechecks passed.",
+        "2026-06-23: Tasks 1-2 and 6-7 complete: centralized instance resolution preserves production defaults, rejects production path aliases, gives electron:dev isolated StockCraft Dev defaults and numbered ports, propagates resolved identity to child processes, and lint:instance-paths prevents new production ~/.craft-agent runtime literals.",
+        "2026-06-23: Task 8 complete: electron-builder.dev.yml defines appId com.stockcraft.dev, productName StockCraft Dev, no publishing, StockCraft-Dev artifacts, and a per-user NSIS boundary. The packaged runtime uses a baked stockcraft-dev preset without embedding build-machine absolute paths; an offline --dir Windows smoke produced StockCraft Dev.exe.",
+        "2026-06-23: Dual-instance smoke passed. Installed Craft Agents ran as PID 37628/39136 with window title Craft Agents, config ~/.craft-agent, userData C:\\Users\\-\\AppData\\Roaming\\Craft Agents, and its own lock. StockCraft Dev ran as PID 29864/3388/41768/31096 with window title StockCraft Dev, config ~/.stockcraft-dev, userData C:\\Users\\-\\AppData\\Roaming\\StockCraft Dev, its own lock and SQLite. Each app remained alive while the other was closed and relaunched; normal StockCraft Dev exit removed only its own lock.",
+        "2026-06-23: Deep-link separation passed. Windows registered craftagents:// to the installed Craft Agents executable and stockcraft-dev:// to the absolute development app path plus serialized instance identity. Triggering stockcraft-dev://settings/preferences was received by the StockCraft Dev primary instance, did not change the production log or lock, and produced no secondary initialization failure.",
+        "2026-06-24: Final verification passed: 104 focused tests across 12 files, lint:instance-paths, shared/server-core/server/session-tools-core/electron typechecks, apps/electron build:main:win, root electron:build:main, init.ps1, JSON validation, and git diff --check."
       ],
-      "notes": "原版数据不迁移、不复制、不修改；开发版从空的 ~/.stockcraft-dev 开始。设计已批准，详细 TDD 实施计划已落盘。Tasks 1-5 已实现，infra-002 保持 in_progress，下一步为 Task 6。"
+      "notes": "完整实例隔离已实现并通过自动化与 Windows 双实例验收。原版继续使用 ~/.craft-agent、Craft Agents userData 和 craftagents://；开发版使用 ~/.stockcraft-dev、StockCraft Dev userData 和 stockcraft-dev://。原版数据未迁移、复制或由开发实例写入。"
     }
   ]
 }

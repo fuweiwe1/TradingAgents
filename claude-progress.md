@@ -967,3 +967,34 @@
 - Known risk/blocker:
   - Registration coverage files should continue to run in separate Bun processes when the environment is cold or concurrent typechecks are active.
   - On this Windows machine, use `init.ps1`; the WSL `/bin/bash` path remains unavailable.
+
+### Session 039
+
+- Date: 2026-06-24
+- Goal: Complete infra-002 full instance isolation and Windows dual-instance acceptance.
+- Completed:
+  - Finished Tasks 6-8: child-process instance propagation, hard-coded production path guard, and independent StockCraft Dev package identity.
+  - Added the packaged `stockcraft-dev` runtime preset so release builds derive paths from the runtime user's home/AppData without embedding build-machine paths.
+  - Made internal deep-link classification and routing instance-aware, while translating legacy renderer `craftagents://` links to the active scheme.
+  - Fixed Windows development protocol registration to use an absolute app path and serialized instance identity; bootstrap restores those values before loading shared configuration.
+  - Gated full Electron initialization behind the single-instance lock so a protocol helper process forwards its URL and exits without trying to acquire the server lock.
+  - Created an offline Windows unpacked smoke package named `StockCraft Dev.exe`; the committed builder config retains executable metadata editing for normal package builds.
+- Final automated verification:
+  - Focused isolation suite: 104 tests, 0 failures across 12 files.
+  - `bun run lint:instance-paths`: passed.
+  - shared, server-core, headless server, session-tools-core, and Electron typechecks: passed.
+  - `apps/electron` `build:main:win` and root `electron:build:main`: passed.
+  - `powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1`: passed.
+- Windows dual-instance evidence:
+  - Installed Craft Agents used `~/.craft-agent`, `C:\Users\-\AppData\Roaming\Craft Agents`, window title `Craft Agents`, and a production lock tied to its own PID.
+  - StockCraft Dev used `~/.stockcraft-dev`, `C:\Users\-\AppData\Roaming\StockCraft Dev`, window title `StockCraft Dev`, its own SQLite and lock.
+  - Both windows ran concurrently. Each could be closed and relaunched without terminating the other; a normal development-app exit removed only `.stockcraft-dev/.server.lock`.
+  - `craftagents://` remained registered to the installed executable. `stockcraft-dev://` registered to the absolute development app path with serialized StockCraft identity.
+  - Triggering `stockcraft-dev://settings/preferences` reached the development primary instance, left the production log/lock unchanged, and produced no secondary initialization failure.
+- Current progress:
+  - `infra-002` is `passing`.
+  - Current implementation branch: `codex/infra-002-instance-isolation-impl`.
+- Environment notes:
+  - This worktree was installed with `--ignore-scripts`; live smoke reused the already installed Electron 39.2.7 distribution and checksum-identical bundled `uv.exe` from the main checkout.
+  - The offline `--dir` packaging smoke temporarily disabled executable metadata editing only via a command-line override because winCodeSign download was unavailable; the committed development builder config does not disable it.
+  - On this Windows machine, use `init.ps1`; the WSL `/bin/bash` path remains unavailable.
