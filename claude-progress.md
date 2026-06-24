@@ -998,3 +998,30 @@
   - This worktree was installed with `--ignore-scripts`; live smoke reused the already installed Electron 39.2.7 distribution and checksum-identical bundled `uv.exe` from the main checkout.
   - The offline `--dir` packaging smoke temporarily disabled executable metadata editing only via a command-line override because winCodeSign download was unavailable; the committed development builder config does not disable it.
   - On this Windows machine, use `init.ps1`; the WSL `/bin/bash` path remains unavailable.
+
+### Session 040
+
+- Date: 2026-06-24
+- Goal: Replace the upstream Craft Agents README with a GitHub-facing StockCraft README.
+- Completed:
+  - Confirmed the root `README.md` was still the original Craft Agents OSS document.
+  - Agreed with the user on a Chinese-first product README, development-preview status, and a short Craft Agents OSS attribution under “项目基础”.
+  - Added and committed `docs/superpowers/specs/2026-06-24-stockcraft-readme-rewrite-design.md`.
+  - Added `docs/superpowers/plans/2026-06-24-stockcraft-readme-rewrite.md`.
+  - Replaced the upstream title, marketing video, screenshots, one-line installer, and product copy with StockCraft-specific documentation.
+  - Documented the verified five-step research flow, market support, Watchlist, Reports, SQLite persistence and retry, StockCraft Dev isolation, local startup, common commands, architecture, upstream basis, current limitations, and investment disclaimer.
+  - Added `docs-001` and marked it `passing`.
+- Verification:
+  - Required README topic grep passed for StockCraft, development preview, five-step research, Watchlist, Reports, SQLite, StockCraft Dev, Craft Agents OSS, and the investment disclaimer.
+  - Removed-content grep found no Trendshift badge, upstream demo video, upstream one-line installer, or Craft Agents root heading.
+  - All package scripts documented in README exist in `package.json`.
+  - `powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1`: passed.
+  - `bun run typecheck:shared`: passed.
+- Current progress:
+  - `docs-001` is `passing`.
+  - Current branch: `codex/infra-002-instance-isolation`.
+  - The local branch contains the StockCraft README design and implementation commits and is ahead of its remote tracking branch.
+- Known risk/blocker:
+  - The GitHub repository is still named `TradingAgents`; README explicitly distinguishes the repository name from the StockCraft product name.
+  - No stable release download is advertised; the project remains a local development preview.
+  - On this Windows machine, use `init.ps1`; the WSL `/bin/bash` path remains unavailable.

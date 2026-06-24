@@ -3,10 +3,10 @@
 ## Current state
 
 - Repository: `C:\craft_agents`
-- Implementation worktree: `C:\craft_agents\.worktrees\infra-002-instance-isolation-impl`
-- Current branch: `codex/infra-002-instance-isolation-impl`
+- Current branch: `codex/infra-002-instance-isolation`
 - `infra-002` complete-instance isolation is implemented and marked `passing`.
-- The implementation branch still needs final integration into `codex/infra-002-instance-isolation` or another user-selected target.
+- `docs-001` StockCraft README rewrite is implemented and marked `passing`.
+- The branch is ahead of `origin/codex/infra-002-instance-isolation` and still needs the user's normal push/integration decision.
 
 ## Completed product scope
 
@@ -15,25 +15,26 @@
 - `stock-003`: standalone Reports Center with filtering, details, session navigation, and Markdown export.
 - `stock-004`: standalone Watchlist with groups, search, notes, atomic editing, confirmed removal, and direct research launch.
 - `stock-005`: service-side automatic persistence of five research steps and the final report, with visible retry and Agent regeneration recovery.
+- `infra-002`: full runtime and data isolation between StockCraft Dev and an installed Craft Agents instance.
+- `docs-001`: Chinese-first GitHub README for StockCraft, including local startup, verified capabilities, architecture, upstream basis, limitations, and investment disclaimer.
 
 ## Latest verification
 
 - `powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1`: passed.
-- Infra-002 focused suite: 104 tests, 0 failures across 12 files.
-- `lint:instance-paths`: passed.
-- Shared, server-core, headless server, session-tools-core, and Electron typechecks: passed.
-- Windows main-process build and root main-process build: passed.
-- Installed Craft Agents and StockCraft Dev ran concurrently with separate config roots, Electron userData directories, locks, SQLite files, windows, and deep-link schemes.
-- `stockcraft-dev://settings/preferences` reached only the development instance; production log and lock remained unchanged.
+- `bun run typecheck:shared`: passed.
+- README required-content and removed-upstream-content checks: passed.
+- Every package script documented in README exists in `package.json`.
+- `feature_list.json` JSON validation, `git diff --check`, and changed-file scope checks: passed after the final record edits.
 
 ## Known issues
 
+- The GitHub repository remains named `TradingAgents`, while the product and README are named StockCraft.
+- This is a development preview; there is no stable release download or production-readiness claim.
 - Running `registration.test.ts` and `registration-profiles.test.ts` in the same Bun invocation shares mock registration state and can produce a timeout/cross-profile false negative. Run each file in its own process.
 - `bash ./init.sh` enters a broken WSL environment without `/bin/bash`; use `init.ps1` on this machine.
-- This implementation worktree used `--ignore-scripts`; GUI/package smoke reused the main checkout's Electron 39.2.7 distribution and bundled `uv.exe`.
-- Offline unpacked packaging required a one-off CLI override disabling EXE metadata editing because winCodeSign could not be downloaded. The committed builder config keeps normal metadata editing enabled.
+- Electron's Node 22 `node:sqlite` API still emits an experimental-feature warning.
 
 ## Next action
 
-1. Validate the final record-only commit.
-2. Integrate `codex/infra-002-instance-isolation-impl` into the chosen target branch.
+1. Commit the README implementation and persistent workflow records.
+2. Push or integrate `codex/infra-002-instance-isolation` when requested.

@@ -268,6 +268,28 @@
         "2026-06-24: Final verification passed: 104 focused tests across 12 files, lint:instance-paths, shared/server-core/server/session-tools-core/electron typechecks, apps/electron build:main:win, root electron:build:main, init.ps1, JSON validation, and git diff --check."
       ],
       "notes": "完整实例隔离已实现并通过自动化与 Windows 双实例验收。原版继续使用 ~/.craft-agent、Craft Agents userData 和 craftagents://；开发版使用 ~/.stockcraft-dev、StockCraft Dev userData 和 stockcraft-dev://。原版数据未迁移、复制或由开发实例写入。"
+    },
+    {
+      "id": "docs-001",
+      "priority": 9,
+      "area": "documentation",
+      "title": "重写 StockCraft 项目 README",
+      "user_visible_behavior": "GitHub 仓库首页以中文准确介绍 StockCraft 的定位、现有功能、本地运行方式、开发状态、上游基础和投资风险边界。",
+      "status": "passing",
+      "verification": [
+        "README 首屏主体为 StockCraft，并明确标注开发预览版。",
+        "README 只描述已经实现并验证的 StockCraft 功能。",
+        "README 中的本地启动和常用命令与当前仓库脚本一致。",
+        "README 简短说明 Craft Agents OSS 项目基础并包含投资免责声明。"
+      ],
+      "evidence": [
+        "2026-06-24: 用户批准中文为主的产品型 README 结构，并确认以开发预览版描述项目、在“项目基础”章节简短保留 Craft Agents OSS 来源。",
+        "2026-06-24: 根 README 已由 Craft Agents 上游原文替换为 StockCraft 项目说明，覆盖五步研究、A股/港股/美股、Watchlist、Reports、SQLite 自动持久化、StockCraft Dev 实例隔离、启动命令、架构、限制和投资免责声明。",
+        "2026-06-24: README 必需内容检查通过；原版 Trendshift、宣传视频、上游一键安装脚本和 Craft Agents 主标题检查无匹配。",
+        "2026-06-24: README 所列 electron:dev、typecheck、实例路径、i18n、Electron 构建和 StockCraft Dev 打包脚本均在 package.json 中存在。",
+        "2026-06-24: powershell -NoProfile -ExecutionPolicy Bypass -File .\\init.ps1 和 bun run typecheck:shared 通过。"
+      ],
+      "notes": "GitHub 仓库首页现以中文介绍 StockCraft，并明确开发预览状态、已验证功能、当前仓库名、上游基础和投资风险边界。"
     }
   ]
 }
