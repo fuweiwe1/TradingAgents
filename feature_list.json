@@ -287,9 +287,10 @@
         "2026-06-24: 根 README 已由 Craft Agents 上游原文替换为 StockCraft 项目说明，覆盖五步研究、A股/港股/美股、Watchlist、Reports、SQLite 自动持久化、StockCraft Dev 实例隔离、启动命令、架构、限制和投资免责声明。",
         "2026-06-24: README 必需内容检查通过；原版 Trendshift、宣传视频、上游一键安装脚本和 Craft Agents 主标题检查无匹配。",
         "2026-06-24: README 所列 electron:dev、typecheck、实例路径、i18n、Electron 构建和 StockCraft Dev 打包脚本均在 package.json 中存在。",
-        "2026-06-24: powershell -NoProfile -ExecutionPolicy Bypass -File .\\init.ps1 和 bun run typecheck:shared 通过。"
+        "2026-06-24: powershell -NoProfile -ExecutionPolicy Bypass -File .\\init.ps1 和 bun run typecheck:shared 通过。",
+        "2026-06-24: codex/infra-002-instance-isolation 已 fast-forward 合并到本地 main；合并后 init.ps1、typecheck:shared、lint:instance-paths 和 README 内容守卫通过。"
       ],
-      "notes": "GitHub 仓库首页现以中文介绍 StockCraft，并明确开发预览状态、已验证功能、当前仓库名、上游基础和投资风险边界。"
+      "notes": "GitHub 仓库首页现以中文介绍 StockCraft，并明确开发预览状态、已验证功能、当前仓库名、上游基础和投资风险边界；改动已合并到本地 main，尚未推送。"
     }
   ]
 }

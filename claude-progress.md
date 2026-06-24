@@ -1025,3 +1025,26 @@
   - The GitHub repository is still named `TradingAgents`; README explicitly distinguishes the repository name from the StockCraft product name.
   - No stable release download is advertised; the project remains a local development preview.
   - On this Windows machine, use `init.ps1`; the WSL `/bin/bash` path remains unavailable.
+
+### Session 041
+
+- Date: 2026-06-24
+- Goal: Merge the completed StockCraft README and instance-isolation branch into local `main`.
+- Completed:
+  - Confirmed `codex/infra-002-instance-isolation` was clean and 22 commits ahead of local `main`.
+  - Attempted `git fetch origin`; GitHub was unreachable on port 443, so no remote state was changed or assumed current.
+  - Confirmed local `main` was already one commit ahead of the cached `origin/main`.
+  - Switched to `main` and fast-forward merged `codex/infra-002-instance-isolation` from `33899e6` to `93ad37f`.
+- Post-merge verification:
+  - `powershell -NoProfile -ExecutionPolicy Bypass -File .\init.ps1`: passed.
+  - `bun run typecheck:shared`: passed.
+  - `bun run lint:instance-paths`: passed.
+  - README required-content and removed-upstream-content guards: passed.
+- Current progress:
+  - Current branch: `main`.
+  - StockCraft instance isolation and the Chinese-first README are integrated locally.
+  - Local `main` has not been pushed.
+- Known risk/blocker:
+  - The latest remote state could not be refreshed because GitHub was unreachable during this session.
+  - Before pushing from a networked terminal, use a normal `git push origin main`; Git will reject the push safely if the remote moved.
+  - On this Windows machine, use `init.ps1`; the WSL `/bin/bash` path remains unavailable.
